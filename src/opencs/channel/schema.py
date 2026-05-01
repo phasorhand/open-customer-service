@@ -49,3 +49,26 @@ class InboundMessage(BaseModel):
 
     def text_concat(self) -> str:
         return "\n".join(p.text or "" for p in self.content if p.kind == "text" and p.text)
+
+
+OutboundKind = Literal["reply", "add_tag", "add_to_crm", "transfer_to_human"]
+
+
+class OutboundAction(BaseModel):
+    """Platform-neutral outbound action consumed by ChannelAdapter.send."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    conversation_id: str
+    kind: OutboundKind
+    content: list[ContentPart] | None
+    target: str | None
+    metadata: dict[str, object]
+
+    @model_validator(mode="after")
+    def _require_kind_specific_fields(self) -> "OutboundAction":
+        if self.kind == "reply" and not self.content:
+            raise ValueError("reply action requires non-empty content")
+        if self.kind in {"add_tag", "add_to_crm"} and not self.target:
+            raise ValueError(f"{self.kind} action requires target")
+        return self

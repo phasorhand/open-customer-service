@@ -3,7 +3,7 @@ from datetime import UTC, datetime
 import pytest
 from pydantic import ValidationError
 
-from opencs.channel.schema import ContentPart, InboundMessage
+from opencs.channel.schema import ContentPart, InboundMessage, OutboundAction
 
 
 def test_content_part_text_round_trips() -> None:
@@ -62,3 +62,36 @@ def test_inbound_message_rejects_naive_datetime() -> None:
             raw_payload={},
             platform_meta={},
         )
+
+
+def test_outbound_reply_requires_content() -> None:
+    with pytest.raises(ValidationError):
+        OutboundAction(
+            conversation_id="c",
+            kind="reply",
+            content=None,
+            target=None,
+            metadata={},
+        )
+
+
+def test_outbound_add_tag_requires_target() -> None:
+    with pytest.raises(ValidationError):
+        OutboundAction(
+            conversation_id="c",
+            kind="add_tag",
+            content=None,
+            target=None,
+            metadata={"tag": "vip"},
+        )
+
+
+def test_outbound_reply_ok() -> None:
+    a = OutboundAction(
+        conversation_id="c",
+        kind="reply",
+        content=[ContentPart(kind="text", text="ok")],
+        target=None,
+        metadata={},
+    )
+    assert a.kind == "reply"
