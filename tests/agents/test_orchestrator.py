@@ -101,3 +101,91 @@ async def test_orchestrator_no_channel_send_for_hitl_plans() -> None:
     await orch.handle(message=_inbound("test"))
     entries = guard._log.recent(limit=5)
     assert entries[0].decision == "hitl_queued"
+
+
+async def test_orchestrator_records_inbound_to_memory() -> None:
+    from opencs.memory.memory_store import MemoryStore
+
+    registry = ChannelRegistry()
+    registry.register(WebChatAdapter())
+
+    mem = MemoryStore()
+    llm = FakeLLMClient(responses=["ok"])
+    worker = CSReplyWorker(llm=llm, model="fake")
+    guard = _guard()
+
+    orch = Orchestrator(workers=[worker], guard=guard, registry=registry, memory_store=mem)
+    await orch.handle(message=_inbound("hi"))
+
+    rows = mem.l0.list(conversation_id="conv-1")
+    assert len(rows) == 1
+    assert rows[0].kind == "inbound_message"
+
+
+async def test_orchestrator_injects_l2_summary_into_worker_context() -> None:
+    from opencs.memory.memory_store import MemoryStore
+
+    registry = ChannelRegistry()
+    registry.register(WebChatAdapter())
+
+    mem = MemoryStore()
+    mem.write_l2(
+        subject_id="customer:cust-1",
+        kind="customer_profile",
+        body="VIP customer, prefers quick responses.",
+    )
+
+    received_contexts: list[dict] = []
+
+    class _CapturingWorker(CSReplyWorker):
+        async def run(self, inp: WorkerInput) -> list[ActionPlan]:
+            received_contexts.append(dict(inp.session_context))
+            return await super().run(inp)
+
+    llm = FakeLLMClient(responses=["ok"])
+    worker = _CapturingWorker(llm=llm, model="fake")
+    guard = _guard()
+
+    orch = Orchestrator(workers=[worker], guard=guard, registry=registry, memory_store=mem)
+    await orch.handle(message=_inbound("hello"))
+
+    assert len(received_contexts) == 1
+    assert "VIP" in (received_contexts[0].get("l2_summary") or "")
+
+
+async def test_orchestrator_injects_skill_matches_into_worker_context() -> None:
+    import tempfile
+    import textwrap
+    from pathlib import Path
+
+    from opencs.skills.skill_repo import SkillRepo
+
+    with tempfile.TemporaryDirectory() as tmpdir:
+        skill_dir = Path(tmpdir) / "refund"
+        skill_dir.mkdir()
+        (skill_dir / "SKILL.md").write_text(
+            "---\nname: refund\ndescription: Refund policy\nkeywords:\n  - refund\n---\nHandle refunds carefully.\n",
+            encoding="utf-8",
+        )
+
+        registry = ChannelRegistry()
+        registry.register(WebChatAdapter())
+
+        received_contexts: list[dict] = []
+
+        class _CapturingWorker(CSReplyWorker):
+            async def run(self, inp: WorkerInput) -> list[ActionPlan]:
+                received_contexts.append(dict(inp.session_context))
+                return await super().run(inp)
+
+        llm = FakeLLMClient(responses=["ok"])
+        worker = _CapturingWorker(llm=llm, model="fake")
+        guard = _guard()
+        repo = SkillRepo(skills_dir=tmpdir)
+
+        orch = Orchestrator(
+            workers=[worker], guard=guard, registry=registry, skill_repo=repo
+        )
+        await orch.handle(message=_inbound("I want a refund"))
+
+        assert received_contexts[0].get("skills") == ["Handle refunds carefully."]
