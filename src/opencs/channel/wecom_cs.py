@@ -118,7 +118,29 @@ class WecomCustomerServiceAdapter(ChannelAdapter):
         )
 
     async def send(self, action: OutboundAction, token: ExecutionToken) -> SendResult:
-        raise NotImplementedError("send lands in Task 13")
+        action_id = str(action.metadata["action_id"])
+        token.verify(action_id=action_id)
+        if action.kind != "reply":
+            raise NotImplementedError(
+                f"WecomCustomerServiceAdapter.send only supports kind='reply', got {action.kind!r}"
+            )
+        if self._send_msg is None:
+            raise RuntimeError("WecomCustomerServiceAdapter has no msg_sender configured")
+        if not action.content:
+            raise ValueError("reply action requires content (validated by schema)")
+
+        text = "\n".join(p.text for p in action.content if p.kind == "text" and p.text)
+        if not text:
+            raise NotImplementedError("non-text reply content not yet supported")
+
+        payload = {
+            "touser": str(action.metadata["external_userid"]),
+            "open_kfid": str(action.metadata["open_kfid"]),
+            "msgtype": "text",
+            "text": {"content": text},
+        }
+        result = await self._send_msg(payload)
+        return SendResult(delivered=True, platform_message_id=str(result["msgid"]))
 
     async def on_install(self, config: ChannelConfig) -> None:
         if not isinstance(config, WecomCSConfig):

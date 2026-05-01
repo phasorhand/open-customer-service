@@ -85,3 +85,62 @@ async def test_parse_inbound_uses_injected_fetcher() -> None:
     assert msg.text_concat() == "hello"
     assert msg.platform_meta["open_kfid"] == "kf_xyz"
     assert fetched == ["kf_xyz"]
+
+
+from datetime import timedelta
+
+from opencs.channel.exec_token import StubExecutionToken
+from opencs.channel.schema import ContentPart, OutboundAction
+
+
+async def test_send_calls_injected_sender_with_token_verified() -> None:
+    sent: list[dict] = []
+
+    async def fake_sender(payload: dict) -> dict:
+        sent.append(payload)
+        return {"msgid": "wm-1"}
+
+    async def noop_fetcher(*_args, **_kwargs):
+        return []
+
+    a = WecomCustomerServiceAdapter(msg_fetcher=noop_fetcher, msg_sender=fake_sender)
+    action = OutboundAction(
+        conversation_id="wecom:kf_xyz:u1",
+        kind="reply",
+        content=[ContentPart(kind="text", text="hi back")],
+        target=None,
+        metadata={
+            "action_id": "act-1",
+            "open_kfid": "kf_xyz",
+            "external_userid": "u1",
+        },
+    )
+    token = StubExecutionToken("act-1", datetime.now(UTC) + timedelta(seconds=60))
+    res = await a.send(action, token)
+    assert res.delivered is True
+    assert res.platform_message_id == "wm-1"
+    assert sent == [
+        {
+            "touser": "u1",
+            "open_kfid": "kf_xyz",
+            "msgtype": "text",
+            "text": {"content": "hi back"},
+        }
+    ]
+
+
+async def test_send_rejects_non_reply_kind() -> None:
+    async def noop(*_a, **_k):
+        return []
+
+    a = WecomCustomerServiceAdapter(msg_fetcher=noop, msg_sender=noop)
+    action = OutboundAction(
+        conversation_id="wecom:kf_xyz:u1",
+        kind="add_tag",
+        content=None,
+        target="u1",
+        metadata={"action_id": "act-2", "tag": "vip"},
+    )
+    token = StubExecutionToken("act-2", datetime.now(UTC) + timedelta(seconds=60))
+    with pytest.raises(NotImplementedError):
+        await a.send(action, token)
