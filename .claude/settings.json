@@ -1,0 +1,17 @@
+{
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash .claude/hooks/oss-first-check.sh",
+            "timeout": 10,
+            "statusMessage": "OSS-First 门禁检查中…"
+          }
+        ]
+      }
+    ]
+  }
+}
