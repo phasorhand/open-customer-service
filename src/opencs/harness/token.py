@@ -4,9 +4,11 @@ import json
 from dataclasses import dataclass, field
 from datetime import UTC, datetime, timedelta
 
+from opencs.channel.exec_token import InvalidTokenError as _BaseInvalidTokenError
 
-class InvalidTokenError(Exception):
-    """Raised when an ExecutionToken fails verification."""
+
+class InvalidTokenError(_BaseInvalidTokenError):
+    """Raised when a HarnessToken fails HMAC verification."""
 
 
 def _canonical_args_hash(args: dict[str, object]) -> bytes:

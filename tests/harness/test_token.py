@@ -34,15 +34,27 @@ def test_token_rejects_expired() -> None:
 def test_token_rejects_tampered_signature() -> None:
     tf = _factory()
     tok = tf.issue(action_id="act-1", args={})
-    # Tamper the signature byte
     tampered = HarnessToken(
         action_id=tok.action_id,
         args_hash=tok.args_hash,
         expires_at=tok.expires_at,
         signature=b"bad" + tok.signature[3:],
     )
-    with pytest.raises(InvalidTokenError, match="signature"):
-        tampered.verify(action_id="act-1")
+    with pytest.raises(InvalidTokenError, match="mismatch"):
+        tf.verify(tampered, action_id="act-1")
+
+
+def test_token_rejects_verify_with_no_key_available() -> None:
+    tf = _factory()
+    tok = tf.issue(action_id="act-1", args={})
+    keyless = HarnessToken(
+        action_id=tok.action_id,
+        args_hash=tok.args_hash,
+        expires_at=tok.expires_at,
+        signature=tok.signature,
+    )
+    with pytest.raises(InvalidTokenError, match="no secret key"):
+        keyless.verify(action_id="act-1")
 
 
 def test_different_factories_with_different_secrets_reject_each_others_tokens() -> None:
