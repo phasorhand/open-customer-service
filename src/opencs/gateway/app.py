@@ -5,7 +5,9 @@ from fastapi import FastAPI
 from opencs.channel.registry import ChannelRegistry
 from opencs.channel.schema import InboundMessage
 from opencs.channel.webchat import WebChatAdapter
+from opencs.channel.wecom_cs import WecomCustomerServiceAdapter
 from opencs.gateway.routes_webchat import register_webchat_routes
+from opencs.gateway.routes_wecom import register_wecom_routes
 
 InboundHandler = Callable[[InboundMessage], Awaitable[None]]
 
@@ -14,6 +16,7 @@ def create_app(
     registry: ChannelRegistry,
     *,
     webchat_handler: InboundHandler | None,
+    wecom_handler: InboundHandler | None = None,
 ) -> FastAPI:
     app = FastAPI(title="OpenCS Gateway", version="0.1.0")
 
@@ -25,6 +28,13 @@ def create_app(
         webchat = registry.get("webchat")
         assert isinstance(webchat, WebChatAdapter)
         register_webchat_routes(app, webchat, webchat_handler)
+
+    if "wecom_cs" in registry.ids():
+        if wecom_handler is None:
+            raise ValueError("wecom_cs channel registered but no wecom_handler provided")
+        wecom = registry.get("wecom_cs")
+        assert isinstance(wecom, WecomCustomerServiceAdapter)
+        register_wecom_routes(app, wecom, wecom_handler)
 
     return app
 
