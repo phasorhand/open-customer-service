@@ -12,6 +12,7 @@ dependencies = [
     "httpx>=0.27,<0.28",
     "anyio>=4.4,<5",
     "cryptography>=43,<44",
+    "python-frontmatter>=1.1,<2",
 ]
 
 [dependency-groups]
