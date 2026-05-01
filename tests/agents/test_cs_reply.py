@@ -54,3 +54,42 @@ async def test_cs_reply_intent_is_non_empty() -> None:
     worker = CSReplyWorker(llm=llm, model="fake")
     plans = await worker.run(WorkerInput(message=_inbound()))
     assert plans[0].intent != ""
+
+
+async def test_cs_reply_includes_l2_summary_in_prompt() -> None:
+    llm = FakeLLMClient(responses=["Got it!"])
+    worker = CSReplyWorker(llm=llm, model="fake")
+    inp = WorkerInput(
+        message=_inbound("hello"),
+        session_context={
+            "l2_summary": "Customer is VIP. Prefers email.",
+            "skills": [],
+        },
+    )
+    await worker.run(inp)
+    system_msg = next(m for m in llm.calls[-1]["messages"] if m.role == "system")
+    assert "VIP" in system_msg.content
+
+
+async def test_cs_reply_includes_skill_text_in_prompt() -> None:
+    llm = FakeLLMClient(responses=["No problem!"])
+    worker = CSReplyWorker(llm=llm, model="fake")
+    inp = WorkerInput(
+        message=_inbound("I want a refund"),
+        session_context={
+            "l2_summary": None,
+            "skills": ["Handle refunds carefully. Ask for order number."],
+        },
+    )
+    await worker.run(inp)
+    system_msg = next(m for m in llm.calls[-1]["messages"] if m.role == "system")
+    assert "Handle refunds carefully" in system_msg.content
+
+
+async def test_cs_reply_no_context_uses_base_prompt_only() -> None:
+    llm = FakeLLMClient(responses=["Sure!"])
+    worker = CSReplyWorker(llm=llm, model="fake")
+    inp = WorkerInput(message=_inbound("help"))
+    await worker.run(inp)
+    system_msg = next(m for m in llm.calls[-1]["messages"] if m.role == "system")
+    assert "customer service" in system_msg.content.lower()
