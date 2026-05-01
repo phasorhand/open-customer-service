@@ -155,7 +155,6 @@ async def test_orchestrator_injects_l2_summary_into_worker_context() -> None:
 
 async def test_orchestrator_injects_skill_matches_into_worker_context() -> None:
     import tempfile
-    import textwrap
     from pathlib import Path
 
     from opencs.skills.skill_repo import SkillRepo
@@ -163,10 +162,11 @@ async def test_orchestrator_injects_skill_matches_into_worker_context() -> None:
     with tempfile.TemporaryDirectory() as tmpdir:
         skill_dir = Path(tmpdir) / "refund"
         skill_dir.mkdir()
-        (skill_dir / "SKILL.md").write_text(
-            "---\nname: refund\ndescription: Refund policy\nkeywords:\n  - refund\n---\nHandle refunds carefully.\n",
-            encoding="utf-8",
+        skill_content = (
+            "---\nname: refund\ndescription: Refund policy\n"
+            "keywords:\n  - refund\n---\nHandle refunds carefully.\n"
         )
+        (skill_dir / "SKILL.md").write_text(skill_content, encoding="utf-8")
 
         registry = ChannelRegistry()
         registry.register(WebChatAdapter())

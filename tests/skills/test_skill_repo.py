@@ -1,4 +1,3 @@
-import textwrap
 from pathlib import Path
 
 from opencs.skills.skill_repo import SkillRepo
@@ -8,7 +7,10 @@ def _make_skill(tmp_path: Path, name: str, keywords: list[str], body: str) -> No
     skill_dir = tmp_path / name
     skill_dir.mkdir()
     keywords_yaml = "\n".join(f"  - {kw}" for kw in keywords)
-    content = f"---\nname: {name}\ndescription: Test skill\nkeywords:\n{keywords_yaml}\n---\n{body}\n"
+    content = (
+        f"---\nname: {name}\ndescription: Test skill\n"
+        f"keywords:\n{keywords_yaml}\n---\n{body}\n"
+    )
     (skill_dir / "SKILL.md").write_text(content, encoding="utf-8")
 
 

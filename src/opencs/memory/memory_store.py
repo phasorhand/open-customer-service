@@ -23,7 +23,8 @@ class MemoryStore:
             payload={"text": message.text_concat(), "customer_id": message.customer_id},
             ts=message.timestamp,
         ))
-        turn_count = int(self.l1.get(message.conversation_id, "turn_count") or 0)
+        raw = self.l1.get(message.conversation_id, "turn_count")
+        turn_count: int = raw if isinstance(raw, int) else 0
         self.l1.set(message.conversation_id, "turn_count", turn_count + 1)
 
     def load_context(
@@ -33,7 +34,8 @@ class MemoryStore:
         customer_id: str,
         message_text: str,
     ) -> dict[str, object]:
-        turn_count = int(self.l1.get(conversation_id, "turn_count") or 0)
+        raw = self.l1.get(conversation_id, "turn_count")
+        turn_count: int = raw if isinstance(raw, int) else 0
 
         subject_entries = self.l2.get_by_subject(f"customer:{customer_id}")
         fts_entries = self.l2.search(message_text, limit=3) if message_text.strip() else []

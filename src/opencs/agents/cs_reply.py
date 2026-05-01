@@ -19,7 +19,8 @@ def _build_system_prompt(session_context: dict[str, object]) -> str:
     if l2_summary:
         parts.append(f"\n\n## Customer Context\n{l2_summary}")
 
-    skills: list[str] = list(session_context.get("skills") or [])
+    raw_skills = session_context.get("skills")
+    skills: list[str] = list(raw_skills) if isinstance(raw_skills, list) else []
     if skills:
         skill_block = "\n\n---\n\n".join(skills)
         parts.append(f"\n\n## Service Guidelines\n{skill_block}")

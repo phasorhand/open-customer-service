@@ -1,7 +1,5 @@
 from datetime import UTC, datetime
 
-import pytest
-
 from opencs.memory.l0_store import L0Event, L0RawEventStore
 
 
