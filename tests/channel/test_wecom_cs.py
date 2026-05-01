@@ -44,3 +44,44 @@ def test_verify_callback_signature_rejects_wrong() -> None:
             encrypt="ENCRYPTED",
             signature="deadbeef",
         )
+
+
+from datetime import UTC, datetime
+
+from opencs.channel.wecom_cs import (
+    WecomCustomerServiceAdapter,
+    WecomKfMessage,
+)
+
+
+async def test_parse_inbound_uses_injected_fetcher() -> None:
+    fetched: list[str] = []
+
+    async def fake_fetcher(open_kfid: str, token: str | None) -> list[WecomKfMessage]:
+        fetched.append(open_kfid)
+        return [
+            WecomKfMessage(
+                msgid="m1",
+                open_kfid=open_kfid,
+                external_userid="u1",
+                msgtype="text",
+                send_time=int(datetime(2026, 5, 1, tzinfo=UTC).timestamp()),
+                text="hello",
+            )
+        ]
+
+    a = WecomCustomerServiceAdapter(msg_fetcher=fake_fetcher)
+    msg = await a.parse_inbound(
+        {
+            "decrypted": {
+                "ToUserName": "ww1234",
+                "OpenKfId": "kf_xyz",
+                "Event": "kf_msg_or_event",
+                "Token": "next_cursor",
+            }
+        }
+    )
+    assert msg.channel_id == "wecom_cs"
+    assert msg.text_concat() == "hello"
+    assert msg.platform_meta["open_kfid"] == "kf_xyz"
+    assert fetched == ["kf_xyz"]
