@@ -20,7 +20,7 @@ class ChannelAdapter(ABC):
     capabilities: ClassVar[ChannelCapabilities]
 
     @abstractmethod
-    async def parse_inbound(self, raw_event: dict) -> InboundMessage:
+    async def parse_inbound(self, raw_event: dict[str, object]) -> InboundMessage:
         """Translate a platform-native callback payload into an InboundMessage.
 
         Implementations are responsible for signature verification, decryption,

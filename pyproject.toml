@@ -45,3 +45,7 @@ select = ["E", "F", "W", "I", "B", "UP", "ASYNC", "RUF"]
 python_version = "3.12"
 strict = true
 files = ["src/opencs"]
+
+[[tool.mypy.overrides]]
+module = "wechatpy.*"
+ignore_missing_imports = true

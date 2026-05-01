@@ -17,7 +17,7 @@ class _FakeCrypto:
     def check_signature(self, *_args, **_kwargs) -> None:
         return None
 
-    def decrypt_message(self, msg, signature, timestamp, nonce):  # noqa: ARG002
+    def decrypt_message(self, msg, signature, timestamp, nonce):
         return (
             "<xml><ToUserName>ww1234</ToUserName>"
             "<OpenKfId>kf_xyz</OpenKfId>"
@@ -81,7 +81,7 @@ def test_wecom_webhook_get_echoes(monkeypatch) -> None:
     class _CryptoEcho:
         def __init__(self, *_a, **_k) -> None: ...
         def check_signature(self, *_a, **_k) -> None: ...
-        def verify_url(self, *_a, **_k) -> str:  # noqa: ARG002
+        def verify_url(self, *_a, **_k) -> str:
             return "echo-payload"
 
     monkeypatch.setattr("opencs.gateway.routes_wecom.WeChatCrypto", _CryptoEcho)

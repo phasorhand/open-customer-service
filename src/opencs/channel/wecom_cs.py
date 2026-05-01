@@ -9,7 +9,7 @@ import hashlib
 from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
 from datetime import UTC, datetime
-from typing import ClassVar
+from typing import Any, ClassVar, cast
 
 from opencs.channel.adapter import ChannelAdapter
 from opencs.channel.capabilities import ChannelCapabilities
@@ -58,7 +58,7 @@ class WecomKfMessage:
 
 
 MsgFetcher = Callable[[str, str | None], Awaitable[list[WecomKfMessage]]]
-MsgSender = Callable[[dict], Awaitable[dict]]
+MsgSender = Callable[[dict[str, Any]], Awaitable[dict[str, Any]]]
 
 
 class WecomCustomerServiceAdapter(ChannelAdapter):
@@ -83,8 +83,8 @@ class WecomCustomerServiceAdapter(ChannelAdapter):
         self._send_msg = msg_sender
         self._config: WecomCSConfig | None = None
 
-    async def parse_inbound(self, raw_event: dict) -> InboundMessage:
-        decrypted = raw_event["decrypted"]
+    async def parse_inbound(self, raw_event: dict[str, object]) -> InboundMessage:
+        decrypted = cast(dict[str, Any], raw_event["decrypted"])
         open_kfid = str(decrypted["OpenKfId"])
         next_cursor = decrypted.get("Token")
         cursor = str(next_cursor) if next_cursor is not None else None
@@ -109,7 +109,7 @@ class WecomCustomerServiceAdapter(ChannelAdapter):
             sender_kind="customer",
             content=content,
             timestamp=datetime.fromtimestamp(head.send_time, tz=UTC),
-            raw_payload=dict(decrypted),
+            raw_payload=cast(dict[str, object], decrypted),
             platform_meta={
                 "open_kfid": open_kfid,
                 "external_userid": head.external_userid,
@@ -133,7 +133,7 @@ class WecomCustomerServiceAdapter(ChannelAdapter):
         if not text:
             raise NotImplementedError("non-text reply content not yet supported")
 
-        payload = {
+        payload: dict[str, object] = {
             "touser": str(action.metadata["external_userid"]),
             "open_kfid": str(action.metadata["open_kfid"]),
             "msgtype": "text",

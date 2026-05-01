@@ -20,15 +20,19 @@ def register_webchat_routes(
         customer_id: str,
     ) -> None:
         await ws.accept()
+        import asyncio
+
+        # Store pending tasks to prevent gc while callback runs
+        pending_tasks: set[object] = set()
 
         async def push(action: OutboundAction) -> None:
             await ws.send_json(action.model_dump(mode="json"))
 
         def push_sync(action: OutboundAction) -> None:
             # WebChatAdapter.subscribe expects a sync callback; bridge via the running loop.
-            import asyncio
-
-            asyncio.create_task(push(action))
+            task = asyncio.create_task(push(action))
+            pending_tasks.add(task)
+            task.add_done_callback(pending_tasks.discard)
 
         adapter.subscribe(conversation_id, push_sync)
         try:

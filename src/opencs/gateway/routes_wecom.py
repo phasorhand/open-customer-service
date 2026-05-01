@@ -16,7 +16,7 @@ def register_wecom_routes(
     handler: InboundHandler,
 ) -> None:
     def _get_crypto() -> WeChatCrypto:
-        config = adapter._config  # noqa: SLF001
+        config = adapter._config
         if not isinstance(config, WecomCSConfig):
             raise RuntimeError("WecomCustomerServiceAdapter must be installed before use")
         return WeChatCrypto(config.token, config.encoding_aes_key, config.corp_id)

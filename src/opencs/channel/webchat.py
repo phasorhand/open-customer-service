@@ -29,8 +29,9 @@ class WebChatAdapter(ChannelAdapter):
     def __init__(self) -> None:
         self.config: WebChatConfig | None = None
         self._subscribers: dict[str, list[Callable[[OutboundAction], None]]] = {}
+        self._tasks: set[object] = set()
 
-    async def parse_inbound(self, raw_event: dict) -> InboundMessage:
+    async def parse_inbound(self, raw_event: dict[str, object]) -> InboundMessage:
         return InboundMessage(
             channel_id=self.channel_id,
             conversation_id=str(raw_event["conversation_id"]),

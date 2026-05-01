@@ -1,7 +1,14 @@
+from datetime import UTC, datetime, timedelta
+
 import pytest
 
+from opencs.channel.exec_token import StubExecutionToken
+from opencs.channel.schema import ContentPart, OutboundAction
 from opencs.channel.wecom_cs import (
+    InvalidWecomSignatureError,
     WecomCSConfig,
+    WecomCustomerServiceAdapter,
+    WecomKfMessage,
     verify_callback_signature,
 )
 
@@ -34,8 +41,6 @@ def test_verify_callback_signature_accepts_correct() -> None:
 
 
 def test_verify_callback_signature_rejects_wrong() -> None:
-    from opencs.channel.wecom_cs import InvalidWecomSignatureError
-
     with pytest.raises(InvalidWecomSignatureError):
         verify_callback_signature(
             token="tok",
@@ -44,14 +49,6 @@ def test_verify_callback_signature_rejects_wrong() -> None:
             encrypt="ENCRYPTED",
             signature="deadbeef",
         )
-
-
-from datetime import UTC, datetime
-
-from opencs.channel.wecom_cs import (
-    WecomCustomerServiceAdapter,
-    WecomKfMessage,
-)
 
 
 async def test_parse_inbound_uses_injected_fetcher() -> None:
@@ -85,12 +82,6 @@ async def test_parse_inbound_uses_injected_fetcher() -> None:
     assert msg.text_concat() == "hello"
     assert msg.platform_meta["open_kfid"] == "kf_xyz"
     assert fetched == ["kf_xyz"]
-
-
-from datetime import timedelta
-
-from opencs.channel.exec_token import StubExecutionToken
-from opencs.channel.schema import ContentPart, OutboundAction
 
 
 async def test_send_calls_injected_sender_with_token_verified() -> None:
