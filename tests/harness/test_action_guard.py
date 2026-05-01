@@ -1,6 +1,5 @@
-import pytest
 
-from opencs.harness.action_guard import ActionGuard, ActionGuardDecision, GuardOutcome
+from opencs.harness.action_guard import ActionGuard, ActionGuardDecision
 from opencs.harness.action_plan import ActionPlan, RiskTier
 from opencs.harness.audit_log import AuditLog
 from opencs.harness.hitl_queue import HITLQueue

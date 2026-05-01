@@ -36,7 +36,7 @@ def test_action_plan_immutable() -> None:
         intent="test",
         risk_hint=RiskTier.GREEN,
     )
-    with pytest.raises(Exception):
+    with pytest.raises((AttributeError, ValidationError)):
         plan.tool_id = "other"  # type: ignore[misc]
 
 

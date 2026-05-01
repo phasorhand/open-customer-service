@@ -1,4 +1,5 @@
 from opencs.agents.base_worker import BaseWorker, WorkerInput
+from opencs.channel.exec_token import ExecutionToken
 from opencs.channel.registry import ChannelRegistry
 from opencs.channel.schema import ContentPart, InboundMessage, OutboundAction
 from opencs.harness.action_guard import ActionGuard, ActionGuardDecision
@@ -35,7 +36,7 @@ class Orchestrator:
             if outcome.decision == ActionGuardDecision.AUTO_APPROVED and outcome.token:
                 await self._execute_plan(plan, token=outcome.token)
 
-    async def _execute_plan(self, plan: ActionPlan, *, token) -> None:
+    async def _execute_plan(self, plan: ActionPlan, *, token: ExecutionToken) -> None:
         if plan.tool_id != "channel.send":
             return  # ToolProvider integration deferred to Phase 4
 

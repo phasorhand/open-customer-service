@@ -1,4 +1,4 @@
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 
 from opencs.harness.action_plan import ActionPlan
 

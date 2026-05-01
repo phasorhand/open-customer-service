@@ -1,7 +1,5 @@
 from datetime import UTC, datetime
 
-import pytest
-
 from opencs.harness.action_plan import ActionPlan, RiskTier
 from opencs.harness.audit_log import AuditEntry, AuditLog
 

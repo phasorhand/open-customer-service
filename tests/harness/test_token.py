@@ -1,5 +1,4 @@
 import time
-from datetime import UTC, datetime, timedelta
 
 import pytest
 
@@ -59,9 +58,8 @@ def test_token_rejects_verify_with_no_key_available() -> None:
 
 def test_different_factories_with_different_secrets_reject_each_others_tokens() -> None:
     tf1 = TokenFactory(secret_key=b"secret-A", default_ttl_seconds=60)
-    tf2 = TokenFactory(secret_key=b"secret-B", default_ttl_seconds=60)
     tok = tf1.issue(action_id="act-1", args={})
-    # Manually verify using tf2's secret should fail
+    # Manually verify using a different secret should fail
     with pytest.raises(InvalidTokenError, match="signature"):
         HarnessToken(
             action_id=tok.action_id,

@@ -50,3 +50,7 @@ files = ["src/opencs"]
 [[tool.mypy.overrides]]
 module = "wechatpy.*"
 ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = "litellm.*"
+ignore_missing_imports = true

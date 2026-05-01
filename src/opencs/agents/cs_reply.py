@@ -4,10 +4,12 @@ from opencs.agents.base_worker import BaseWorker, WorkerInput
 from opencs.agents.llm_client import LLMClient, LLMMessage
 from opencs.harness.action_plan import ActionPlan, RiskTier
 
-_SYSTEM_PROMPT = """\
-You are a helpful customer service agent. Reply to the customer's message concisely and professionally.
-Do not make promises about refunds, discounts, or timelines without explicit confirmation.
-Reply in the same language as the customer."""
+_SYSTEM_PROMPT = (
+    "You are a helpful customer service agent. "
+    "Reply to the customer's message concisely and professionally. "
+    "Do not make promises about refunds, discounts, or timelines without explicit confirmation. "
+    "Reply in the same language as the customer."
+)
 
 
 class CSReplyWorker(BaseWorker):

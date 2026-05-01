@@ -1,7 +1,7 @@
 import pytest
 
 from opencs.harness.action_plan import ActionPlan, RiskTier
-from opencs.harness.hitl_queue import HITLItem, HITLQueue
+from opencs.harness.hitl_queue import HITLQueue
 
 
 def _plan(action_id: str = "act-1") -> ActionPlan:
