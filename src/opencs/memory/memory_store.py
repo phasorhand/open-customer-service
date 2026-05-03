@@ -1,3 +1,5 @@
+from collections.abc import Callable
+
 from opencs.channel.schema import InboundMessage
 from opencs.memory.l0_store import L0Event, L0RawEventStore
 from opencs.memory.l1_store import L1SessionStore
@@ -11,10 +13,12 @@ class MemoryStore:
         self,
         l0_db: str = ":memory:",
         l2_db: str = ":memory:",
+        evolution_hook: Callable[..., None] | None = None,
     ) -> None:
         self.l0 = L0RawEventStore(db_path=l0_db)
         self.l1 = L1SessionStore()
         self.l2 = L2MemoryStore(db_path=l2_db)
+        self._evolution_hook = evolution_hook
 
     def record_inbound(self, message: InboundMessage) -> None:
         self.l0.append(L0Event(
@@ -56,4 +60,10 @@ class MemoryStore:
         }
 
     def write_l2(self, *, subject_id: str, kind: str, body: str) -> str:
-        return self.l2.write(MemoryEntry(subject_id=subject_id, kind=kind, body=body))
+        version_id = self.l2.write(MemoryEntry(subject_id=subject_id, kind=kind, body=body))
+        if self._evolution_hook is not None:
+            try:
+                self._evolution_hook(subject_id=subject_id, kind=kind, body=body)
+            except Exception:
+                pass
+        return version_id
