@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from datetime import UTC, datetime
 from typing import TYPE_CHECKING
 
 from opencs.agents.base_worker import BaseWorker, WorkerInput
@@ -8,16 +9,19 @@ from opencs.channel.registry import ChannelRegistry
 from opencs.channel.schema import ContentPart, InboundMessage, OutboundAction
 from opencs.harness.action_guard import ActionGuard, ActionGuardDecision
 from opencs.harness.action_plan import ActionPlan
+from opencs.memory.l0_store import L0Event
 
 if TYPE_CHECKING:
     from opencs.memory.memory_store import MemoryStore
     from opencs.skills.skill_repo import SkillRepo
+    from opencs.tools.executor import ToolExecutor
 
 
 class Orchestrator:
     """Receives InboundMessage, loads memory + skills, delegates to Workers, guards plans.
 
     For auto-approved `channel.send` plans: immediately executes via ChannelAdapter.
+    For auto-approved tool plans: dispatches to ToolExecutor, logs result to L0.
     For HITL-queued plans: leaves them in HITLQueue for human review.
     """
 
@@ -29,12 +33,14 @@ class Orchestrator:
         registry: ChannelRegistry,
         memory_store: MemoryStore | None = None,
         skill_repo: SkillRepo | None = None,
+        tool_executor: ToolExecutor | None = None,
     ) -> None:
         self._workers = workers
         self._guard = guard
         self._registry = registry
         self._memory = memory_store
         self._skills = skill_repo
+        self._tool_executor = tool_executor
 
     async def handle(self, *, message: InboundMessage) -> None:
         if self._memory:
@@ -61,27 +67,58 @@ class Orchestrator:
         for plan in all_plans:
             outcome = self._guard.evaluate(plan)
             if outcome.decision == ActionGuardDecision.AUTO_APPROVED and outcome.token:
-                await self._execute_plan(plan, token=outcome.token)
+                await self._execute_plan(
+                    plan, token=outcome.token, conversation_id=message.conversation_id
+                )
 
-    async def _execute_plan(self, plan: ActionPlan, *, token: ExecutionToken) -> None:
-        if plan.tool_id != "channel.send":
-            return  # ToolProvider integration deferred to Phase 4
+    async def _execute_plan(
+        self, plan: ActionPlan, *, token: ExecutionToken, conversation_id: str
+    ) -> None:
+        if plan.tool_id == "channel.send":
+            conv_id = str(plan.args["conversation_id"])
+            text = str(plan.args["text"])
+            channel_id = str(plan.args.get("channel_id", "webchat"))
+            try:
+                adapter = self._registry.get(channel_id)
+            except Exception:
+                adapter = self._registry.get("webchat")
+            action = OutboundAction(
+                conversation_id=conv_id,
+                kind="reply",
+                content=[ContentPart(kind="text", text=text)],
+                target=None,
+                metadata={"action_id": plan.action_id},
+            )
+            await adapter.send(action, token)
+            return
 
-        conversation_id = str(plan.args["conversation_id"])
-        text = str(plan.args["text"])
+        if self._tool_executor is None:
+            return
 
-        # Use channel_id from args if provided, fall back to webchat
-        channel_id = str(plan.args.get("channel_id", "webchat"))
-        try:
-            adapter = self._registry.get(channel_id)
-        except Exception:
-            adapter = self._registry.get("webchat")
+        if self._memory:
+            self._memory.l0.append(L0Event(
+                conversation_id=conversation_id,
+                kind="tool_call",
+                payload={
+                    "action_id": plan.action_id,
+                    "tool_id": plan.tool_id,
+                    "args": dict(plan.args),
+                },
+                ts=datetime.now(UTC),
+            ))
 
-        action = OutboundAction(
-            conversation_id=conversation_id,
-            kind="reply",
-            content=[ContentPart(kind="text", text=text)],
-            target=None,
-            metadata={"action_id": plan.action_id},
-        )
-        await adapter.send(action, token)
+        result = await self._tool_executor.execute(plan, token)
+
+        if self._memory:
+            self._memory.l0.append(L0Event(
+                conversation_id=conversation_id,
+                kind="tool_result",
+                payload={
+                    "action_id": plan.action_id,
+                    "tool_id": plan.tool_id,
+                    "success": result.success,
+                    "data": result.data,
+                    "error": result.error,
+                },
+                ts=datetime.now(UTC),
+            ))
