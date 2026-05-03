@@ -1,7 +1,8 @@
 from __future__ import annotations
 
 from datetime import UTC, datetime
-from typing import TYPE_CHECKING
+from functools import wraps
+from typing import TYPE_CHECKING, Any as _Any, Callable as _Callable
 
 from opencs.agents.base_worker import BaseWorker, WorkerInput
 from opencs.channel.exec_token import ExecutionToken
@@ -15,6 +16,26 @@ if TYPE_CHECKING:
     from opencs.memory.memory_store import MemoryStore
     from opencs.skills.skill_repo import SkillRepo
     from opencs.tools.executor import ToolExecutor
+
+
+def _observe(name: str) -> _Callable[..., _Any]:
+    """Decorator: wraps coroutine with Langfuse @observe if available; else no-op."""
+    try:
+        from langfuse.decorators import observe as lf_observe
+        decorator = lf_observe(name=name)
+    except Exception:
+        def decorator(fn):  # type: ignore[assignment]
+            @wraps(fn)
+            async def wrapped(*a: _Any, **kw: _Any) -> _Any:
+                return await fn(*a, **kw)
+            return wrapped
+
+    def outer(fn: _Callable[..., _Any]) -> _Callable[..., _Any]:
+        wrapped = decorator(fn)
+        wrapped.__langfuse_observed__ = True  # type: ignore[attr-defined]
+        return wrapped
+
+    return outer
 
 
 class Orchestrator:
@@ -42,6 +63,7 @@ class Orchestrator:
         self._skills = skill_repo
         self._tool_executor = tool_executor
 
+    @_observe(name="conversation.handle")
     async def handle(self, *, message: InboundMessage) -> None:
         if self._memory:
             self._memory.record_inbound(message)

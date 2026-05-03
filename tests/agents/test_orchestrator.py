@@ -189,3 +189,9 @@ async def test_orchestrator_injects_skill_matches_into_worker_context() -> None:
         await orch.handle(message=_inbound("I want a refund"))
 
         assert received_contexts[0].get("skills") == ["Handle refunds carefully."]
+
+
+def test_orchestrator_handle_is_observable(monkeypatch) -> None:
+    """Sanity check: Orchestrator.handle is wrapped by a Langfuse observe decorator."""
+    from opencs.agents.orchestrator import Orchestrator
+    assert getattr(Orchestrator.handle, "__langfuse_observed__", False) is True
