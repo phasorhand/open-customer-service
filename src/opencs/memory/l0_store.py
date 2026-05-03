@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import json
 import sqlite3
 from dataclasses import dataclass
@@ -50,6 +52,26 @@ class L0RawEventStore:
             "SELECT conversation_id, kind, payload_json, ts "
             "FROM l0_events WHERE conversation_id=? ORDER BY ts ASC LIMIT ?",
             (conversation_id, limit),
+        )
+        rows = []
+        for conv_id, kind, payload_json, ts_str in cur.fetchall():
+            rows.append(L0Event(
+                conversation_id=conv_id,
+                kind=kind,
+                payload=json.loads(payload_json),
+                ts=datetime.fromisoformat(ts_str),
+            ))
+        return rows
+
+    def list_by_kinds(
+        self, *, conversation_id: str, kinds: list[str], limit: int = 1000
+    ) -> list[L0Event]:
+        placeholders = ",".join("?" for _ in kinds)
+        cur = self._conn.execute(
+            f"SELECT conversation_id, kind, payload_json, ts "
+            f"FROM l0_events WHERE conversation_id=? AND kind IN ({placeholders}) "
+            f"ORDER BY ts ASC LIMIT ?",
+            (conversation_id, *kinds, limit),
         )
         rows = []
         for conv_id, kind, payload_json, ts_str in cur.fetchall():
