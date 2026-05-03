@@ -18,8 +18,11 @@ class InvalidTokenError(Exception):
 class ExecutionToken(Protocol):
     """Contract every Harness-issued token must satisfy."""
 
-    action_id: str
-    expires_at: datetime
+    @property
+    def action_id(self) -> str: ...
+
+    @property
+    def expires_at(self) -> datetime: ...
 
     def verify(self, *, action_id: str) -> None:
         """Raise `InvalidTokenError` if the token cannot authorize `action_id` now."""
