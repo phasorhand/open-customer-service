@@ -1,4 +1,5 @@
 from collections.abc import Awaitable, Callable
+from typing import Any
 
 from fastapi import FastAPI
 
@@ -6,6 +7,7 @@ from opencs.channel.registry import ChannelRegistry
 from opencs.channel.schema import InboundMessage
 from opencs.channel.webchat import WebChatAdapter
 from opencs.channel.wecom_cs import WecomCustomerServiceAdapter
+from opencs.gateway.routes_replay import router as replay_router
 from opencs.gateway.routes_webchat import register_webchat_routes
 from opencs.gateway.routes_wecom import register_wecom_routes
 
@@ -17,12 +19,16 @@ def create_app(
     *,
     webchat_handler: InboundHandler | None,
     wecom_handler: InboundHandler | None = None,
+    replay_engine: Any | None = None,
 ) -> FastAPI:
     app = FastAPI(title="OpenCS Gateway", version="0.1.0")
+    app.state.replay_engine = replay_engine
 
     @app.get("/health")
     async def health() -> dict[str, object]:
         return {"status": "ok", "channels": sorted(registry.ids())}
+
+    app.include_router(replay_router)
 
     if "webchat" in registry.ids():
         webchat = registry.get("webchat")
