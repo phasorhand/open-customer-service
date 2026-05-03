@@ -5,6 +5,7 @@ from datetime import UTC, datetime
 from opencs.evolution.types import EvolutionDimension, GateDecision, Proposal
 from opencs.harness.action_plan import RiskTier
 from opencs.harness.audit_log import AuditEntry, AuditLog
+from opencs.tracing.langfuse_client import get_current_trace_id
 
 _PII_KEYS: frozenset[str] = frozenset({
     "phone", "id_card", "id_number", "address", "email",
@@ -65,3 +66,10 @@ class EvolutionGate:
         if dry_run_count < 3:
             return GateDecision.HITL_PENDING
         return GateDecision.AUTO_PROMOTE
+
+    def stamp_trace_id(self, proposal: Proposal) -> Proposal:
+        """Attach the current Langfuse trace_id to the proposal (if available)."""
+        trace_id = get_current_trace_id()
+        if trace_id is None:
+            return proposal
+        return proposal.model_copy(update={"trace_id": trace_id})
