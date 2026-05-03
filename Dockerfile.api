@@ -12,9 +12,8 @@ RUN apt-get update \
     && rm -rf /var/lib/apt/lists/*
 
 COPY pyproject.toml uv.lock* README.md ./
-RUN pip install uv && uv pip install --system .
-
 COPY src/ ./src/
+RUN pip install uv && uv pip install --system .
 
 ENV OPENCS_DATA_DIR=/data
 RUN mkdir -p /data
