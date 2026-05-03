@@ -1,3 +1,4 @@
+import re
 import uuid
 
 from opencs.agents.base_worker import BaseWorker, WorkerInput
@@ -10,6 +11,8 @@ _BASE_SYSTEM_PROMPT = (
     "Do not make promises about refunds, discounts, or timelines without explicit confirmation. "
     "Reply in the same language as the customer."
 )
+
+_ORDER_RE = re.compile(r"\b(ord-[a-z0-9]+)\b", re.IGNORECASE)
 
 
 def _build_system_prompt(session_context: dict[str, object]) -> str:
@@ -29,7 +32,11 @@ def _build_system_prompt(session_context: dict[str, object]) -> str:
 
 
 class CSReplyWorker(BaseWorker):
-    """Generates a customer-facing reply via LLM, submits as Orange-C ActionPlan."""
+    """Generates a customer-facing reply via LLM, submits as Orange-C ActionPlan.
+
+    If the message references an order ID (ord-*), also emits a GREEN crm.get_order
+    plan so the Orchestrator can log the lookup via ToolExecutor.
+    """
 
     worker_id = "cs_reply"
 
@@ -41,6 +48,20 @@ class CSReplyWorker(BaseWorker):
         customer_text = " ".join(
             part.text or "" for part in inp.message.content if part.kind == "text"
         ).strip()
+
+        plans: list[ActionPlan] = []
+
+        order_match = _ORDER_RE.search(customer_text)
+        if order_match:
+            order_id = order_match.group(1).lower()
+            plans.append(ActionPlan(
+                action_id=f"crm-lookup-{uuid.uuid4().hex[:12]}",
+                tool_id="crm.get_order",
+                args={"order_id": order_id},
+                intent=f"Look up order {order_id} in CRM",
+                risk_hint=RiskTier.GREEN,
+            ))
+
         system_prompt = _build_system_prompt(inp.session_context)
         messages = [
             LLMMessage(role="system", content=system_prompt),
@@ -48,7 +69,7 @@ class CSReplyWorker(BaseWorker):
         ]
         reply_text = await self._llm.chat(messages=messages, model=self._model)
         action_id = f"cs-reply-{uuid.uuid4().hex[:12]}"
-        plan = ActionPlan(
+        plans.append(ActionPlan(
             action_id=action_id,
             tool_id="channel.send",
             args={
@@ -57,5 +78,5 @@ class CSReplyWorker(BaseWorker):
             },
             intent="Send LLM-generated reply to customer",
             risk_hint=RiskTier.ORANGE_C,
-        )
-        return [plan]
+        ))
+        return plans

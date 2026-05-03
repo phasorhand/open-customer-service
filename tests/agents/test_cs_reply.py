@@ -93,3 +93,30 @@ async def test_cs_reply_no_context_uses_base_prompt_only() -> None:
     await worker.run(inp)
     system_msg = next(m for m in llm.calls[-1]["messages"] if m.role == "system")
     assert "customer service" in system_msg.content.lower()
+
+
+async def test_order_reference_emits_crm_lookup_plan() -> None:
+    llm = FakeLLMClient(responses=["Let me check your order."])
+    worker = CSReplyWorker(llm=llm, model="fake")
+    plans = await worker.run(WorkerInput(message=_inbound("what happened to ord-001?")))
+    tool_ids = [p.tool_id for p in plans]
+    assert "crm.get_order" in tool_ids
+    assert "channel.send" in tool_ids
+
+
+async def test_order_plan_is_green_tier() -> None:
+    llm = FakeLLMClient(responses=["Checking order status."])
+    worker = CSReplyWorker(llm=llm, model="fake")
+    plans = await worker.run(WorkerInput(message=_inbound("track ord-002 please")))
+    order_plans = [p for p in plans if p.tool_id == "crm.get_order"]
+    assert len(order_plans) == 1
+    assert order_plans[0].risk_hint == RiskTier.GREEN
+    assert order_plans[0].args["order_id"] == "ord-002"
+
+
+async def test_no_order_reference_emits_only_channel_send() -> None:
+    llm = FakeLLMClient(responses=["Hi there!"])
+    worker = CSReplyWorker(llm=llm, model="fake")
+    plans = await worker.run(WorkerInput(message=_inbound("hello")))
+    assert len(plans) == 1
+    assert plans[0].tool_id == "channel.send"
