@@ -27,7 +27,10 @@ web-ui/coverage/
 docs/
 .claude/
 .planning/
-*.md
+# Exclude markdown except root README.md (needed by hatchling)
+web-ui/*.md
+src/**/*.md
+tests/**/*.md
 
 # Databases + secrets
 *.db
