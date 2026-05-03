@@ -13,6 +13,7 @@ dependencies = [
     "anyio>=4.4,<5",
     "cryptography>=43,<44",
     "python-frontmatter>=1.1,<2",
+    "langfuse>=2.50,<3",
 ]
 
 [dependency-groups]
@@ -58,4 +59,8 @@ ignore_missing_imports = true
 
 [[tool.mypy.overrides]]
 module = "frontmatter.*"
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = "langfuse.*"
 ignore_missing_imports = true
