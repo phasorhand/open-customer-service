@@ -1,8 +1,7 @@
-import type { NextConfig } from "next";
-
+/** @type {import('next').NextConfig} */
 const API_BASE = process.env.OPENCS_API_BASE ?? "http://opencs-api:8000";
 
-const config: NextConfig = {
+const config = {
   async rewrites() {
     return [
       {
