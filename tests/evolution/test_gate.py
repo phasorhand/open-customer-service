@@ -141,3 +141,25 @@ def test_gate_appends_audit_entry(gate: EvolutionGate) -> None:
     entries = gate._audit_log.recent(limit=10)
     assert len(entries) >= 1
     assert entries[0].actor == "evolution_gate"
+
+
+def test_gate_stamps_current_trace_id(monkeypatch) -> None:
+    from opencs.evolution.gate import EvolutionGate
+    from opencs.evolution.types import (
+        EvolutionDimension,
+        Proposal,
+        ProposalAction,
+    )
+    from opencs.harness.audit_log import AuditLog
+
+    monkeypatch.setattr(
+        "opencs.evolution.gate.get_current_trace_id",
+        lambda: "trace-stamped",
+    )
+    gate = EvolutionGate(audit_log=AuditLog(db_path=":memory:"))
+    p = Proposal(
+        id="p-1", dimension=EvolutionDimension.SKILL, action=ProposalAction.CREATE,
+        payload={"skill": "x"}, confidence=0.8, risk_level="low",
+    )
+    stamped = gate.stamp_trace_id(p)
+    assert stamped.trace_id == "trace-stamped"

@@ -98,3 +98,96 @@ def test_list_by_status(store: ProposalStore) -> None:
     assert len(pending) == 2
     assert len(hitl) == 1
     assert hitl[0].id == "p-2"
+
+
+def test_proposal_store_persists_trace_id() -> None:
+    from opencs.evolution.proposal_store import ProposalStore
+    from opencs.evolution.types import (
+        EvolutionDimension,
+        Proposal,
+        ProposalAction,
+    )
+    store = ProposalStore(db_path=":memory:")
+    p = Proposal(
+        id="p-trace-1",
+        dimension=EvolutionDimension.SKILL,
+        action=ProposalAction.CREATE,
+        payload={"x": 1},
+        confidence=0.8,
+        risk_level="low",
+        trace_id="trace-abc-123",
+    )
+    store.save(p)
+    loaded = store.get("p-trace-1")
+    assert loaded is not None
+    assert loaded.trace_id == "trace-abc-123"
+
+
+def test_proposal_store_trace_id_default_none() -> None:
+    from opencs.evolution.proposal_store import ProposalStore
+    from opencs.evolution.types import (
+        EvolutionDimension,
+        Proposal,
+        ProposalAction,
+    )
+    store = ProposalStore(db_path=":memory:")
+    p = Proposal(
+        id="p-notrace",
+        dimension=EvolutionDimension.SKILL,
+        action=ProposalAction.CREATE,
+        payload={},
+        confidence=0.5,
+        risk_level="low",
+    )
+    store.save(p)
+    loaded = store.get("p-notrace")
+    assert loaded is not None
+    assert loaded.trace_id is None
+
+
+def test_proposal_store_list_with_filters() -> None:
+    from opencs.evolution.proposal_store import ProposalStore
+    from opencs.evolution.types import (
+        EvolutionDimension,
+        Proposal,
+        ProposalAction,
+        ProposalStatus,
+    )
+    store = ProposalStore(db_path=":memory:")
+    for i, (dim, status) in enumerate([
+        (EvolutionDimension.SKILL, ProposalStatus.HITL_PENDING),
+        (EvolutionDimension.MEMORY, ProposalStatus.HITL_PENDING),
+        (EvolutionDimension.SKILL, ProposalStatus.AUTO_PROMOTED),
+    ]):
+        store.save(Proposal(
+            id=f"p-{i}", dimension=dim, action=ProposalAction.CREATE,
+            payload={}, confidence=0.5, risk_level="low", status=status,
+        ))
+    pending_all = store.list(status=ProposalStatus.HITL_PENDING)
+    assert len(pending_all) == 2
+    pending_skill = store.list(
+        status=ProposalStatus.HITL_PENDING, dimension=EvolutionDimension.SKILL,
+    )
+    assert len(pending_skill) == 1
+    page = store.list(limit=2, offset=0)
+    assert len(page) == 2
+
+
+def test_proposal_store_count_by_status() -> None:
+    from opencs.evolution.proposal_store import ProposalStore
+    from opencs.evolution.types import (
+        EvolutionDimension,
+        Proposal,
+        ProposalAction,
+        ProposalStatus,
+    )
+    store = ProposalStore(db_path=":memory:")
+    for i in range(3):
+        store.save(Proposal(
+            id=f"p-{i}", dimension=EvolutionDimension.SKILL,
+            action=ProposalAction.CREATE, payload={},
+            confidence=0.5, risk_level="low",
+            status=ProposalStatus.HITL_PENDING,
+        ))
+    assert store.count_by_status(ProposalStatus.HITL_PENDING) == 3
+    assert store.count_by_status(ProposalStatus.AUTO_PROMOTED) == 0

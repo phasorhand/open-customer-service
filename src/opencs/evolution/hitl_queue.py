@@ -15,6 +15,7 @@ class EvolutionHITLItem:
 
 
 class EvolutionHITLQueue:
+    """Deprecated: use PersistentHITLQueue for production workloads."""
     def __init__(self) -> None:
         self._pending: dict[str, EvolutionHITLItem] = {}
 

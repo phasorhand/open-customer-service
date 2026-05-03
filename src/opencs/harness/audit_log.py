@@ -74,3 +74,69 @@ class AuditLog:
                 note=note,
             ))
         return rows
+
+    def list(
+        self,
+        *,
+        actor: str | None = None,
+        decision: str | None = None,
+        since: datetime | None = None,
+        until: datetime | None = None,
+        limit: int = 100,
+        offset: int = 0,
+    ) -> list[AuditEntry]:
+        clauses: list[str] = []
+        params: list[object] = []
+        if actor is not None:
+            clauses.append("actor=?")
+            params.append(actor)
+        if decision is not None:
+            clauses.append("decision=?")
+            params.append(decision)
+        if since is not None:
+            clauses.append("ts >= ?")
+            params.append(since.isoformat())
+        if until is not None:
+            clauses.append("ts <= ?")
+            params.append(until.isoformat())
+        where = f"WHERE {' AND '.join(clauses)}" if clauses else ""
+        params.extend([limit, offset])
+        cur = self._conn.execute(
+            "SELECT action_id, tool_id, risk_tier, decision, actor, ts, note "
+            f"FROM audit_log {where} ORDER BY id DESC LIMIT ? OFFSET ?",
+            tuple(params),
+        )
+        result = []
+        for row in cur.fetchall():
+            action_id, tool_id, risk_tier, decision_v, actor_v, ts_str, note = row
+            result.append(AuditEntry(
+                action_id=action_id,
+                tool_id=tool_id,
+                risk_tier=RiskTier(risk_tier),
+                decision=decision_v,
+                actor=actor_v,
+                ts=datetime.fromisoformat(ts_str),
+                note=note,
+            ))
+        return result
+
+    def count(
+        self,
+        *,
+        actor: str | None = None,
+        decision: str | None = None,
+    ) -> int:
+        clauses: list[str] = []
+        params: list[object] = []
+        if actor is not None:
+            clauses.append("actor=?")
+            params.append(actor)
+        if decision is not None:
+            clauses.append("decision=?")
+            params.append(decision)
+        where = f"WHERE {' AND '.join(clauses)}" if clauses else ""
+        cur = self._conn.execute(
+            f"SELECT COUNT(*) FROM audit_log {where}",
+            tuple(params),
+        )
+        return int(cur.fetchone()[0])

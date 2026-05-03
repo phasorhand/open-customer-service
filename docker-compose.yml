@@ -1,0 +1,108 @@
+name: opencs
+
+networks:
+  opencs-net:
+    driver: bridge
+
+volumes:
+  opencs-data:
+  langfuse-pgdata:
+  redis-data:
+
+services:
+  langfuse-db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    networks: [opencs-net]
+    environment:
+      POSTGRES_USER: langfuse
+      POSTGRES_PASSWORD: ${LANGFUSE_DB_PASSWORD:-change-me}
+      POSTGRES_DB: langfuse
+    volumes:
+      - langfuse-pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U langfuse -d langfuse"]
+      interval: 10s
+      timeout: 3s
+      retries: 10
+      start_period: 10s
+
+  langfuse:
+    image: langfuse/langfuse:2
+    restart: unless-stopped
+    networks: [opencs-net]
+    depends_on:
+      langfuse-db:
+        condition: service_healthy
+    ports:
+      - "3002:3000"
+    environment:
+      DATABASE_URL: postgresql://langfuse:${LANGFUSE_DB_PASSWORD:-change-me}@langfuse-db:5432/langfuse
+      NEXTAUTH_URL: http://localhost:3002
+      NEXTAUTH_SECRET: ${LANGFUSE_NEXTAUTH_SECRET:-change-me}
+      SALT: ${LANGFUSE_SALT:-change-me-too}
+      ENCRYPTION_KEY: ${LANGFUSE_ENCRYPTION_KEY:-0000000000000000000000000000000000000000000000000000000000000000}
+      TELEMETRY_ENABLED: "false"
+      LANGFUSE_DEFAULT_PROJECT_ID: opencs
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:3000/api/public/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    networks: [opencs-net]
+    command: ["redis-server", "--appendonly", "yes"]
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+
+  opencs-api:
+    build:
+      context: .
+      dockerfile: Dockerfile.api
+    image: opencs-api:dev
+    restart: unless-stopped
+    networks: [opencs-net]
+    depends_on:
+      redis:
+        condition: service_healthy
+      langfuse:
+        condition: service_started
+    ports:
+      - "8000:8000"
+    environment:
+      OPENCS_DATA_DIR: /data
+      LITELLM_MODEL: ${LITELLM_MODEL:-anthropic/claude-sonnet-4-20250514}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      LANGFUSE_HOST: ${LANGFUSE_HOST:-http://langfuse:3000}
+      LANGFUSE_PUBLIC_KEY: ${LANGFUSE_PUBLIC_KEY:-}
+      LANGFUSE_SECRET_KEY: ${LANGFUSE_SECRET_KEY:-}
+      REDIS_URL: ${REDIS_URL:-redis://redis:6379}
+      WECOM_CORP_ID: ${WECOM_CORP_ID:-}
+      WECOM_TOKEN: ${WECOM_TOKEN:-}
+      WECOM_ENCODING_AES_KEY: ${WECOM_ENCODING_AES_KEY:-}
+    volumes:
+      - opencs-data:/data
+
+  web-ui:
+    build:
+      context: .
+      dockerfile: Dockerfile.web
+    image: opencs-web:dev
+    restart: unless-stopped
+    networks: [opencs-net]
+    depends_on:
+      opencs-api:
+        condition: service_healthy
+    ports:
+      - "3100:3000"
+    environment:
+      OPENCS_API_BASE: http://opencs-api:8000

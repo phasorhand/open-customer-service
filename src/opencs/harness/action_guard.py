@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 from datetime import UTC, datetime
-from enum import Enum
+from enum import StrEnum
 
 from opencs.harness.action_plan import ActionPlan, RiskTier
 from opencs.harness.audit_log import AuditEntry, AuditLog
@@ -11,7 +11,7 @@ _AUTO_TIERS = {RiskTier.GREEN, RiskTier.YELLOW, RiskTier.ORANGE_A, RiskTier.ORAN
 _HITL_TIERS = {RiskTier.ORANGE_C, RiskTier.RED}
 
 
-class ActionGuardDecision(str, Enum):
+class ActionGuardDecision(StrEnum):
     AUTO_APPROVED = "auto_approved"
     HITL_QUEUED = "hitl_queued"
     REJECTED = "rejected"

@@ -79,3 +79,20 @@ def test_write_l2_stores_entry() -> None:
     entries = store.l2.get_by_subject("customer:u1")
     assert len(entries) == 1
     assert "product B" in entries[0].body
+
+
+def test_write_l2_invokes_evolution_hook_when_configured() -> None:
+    hook_calls: list[tuple[str, str, str]] = []
+
+    def evolution_hook(*, subject_id: str, kind: str, body: str) -> None:
+        hook_calls.append((subject_id, kind, body))
+
+    store = MemoryStore(l0_db=":memory:", l2_db=":memory:", evolution_hook=evolution_hook)
+    store.write_l2(subject_id="customer:c1", kind="preference", body="likes blue")
+    assert hook_calls == [("customer:c1", "preference", "likes blue")]
+
+
+def test_write_l2_without_hook_still_writes() -> None:
+    store = MemoryStore(l0_db=":memory:", l2_db=":memory:")
+    version_id = store.write_l2(subject_id="customer:c1", kind="preference", body="likes red")
+    assert version_id  # Non-empty string means write succeeded

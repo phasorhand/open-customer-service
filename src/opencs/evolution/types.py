@@ -46,3 +46,4 @@ class Proposal(BaseModel, frozen=True):
     gate_decision: GateDecision | None = None
     reviewer: str | None = None
     rejection_note: str | None = None
+    trace_id: str | None = None
