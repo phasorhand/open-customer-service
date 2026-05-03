@@ -131,3 +131,161 @@ def test_approve_unknown_proposal_returns_404() -> None:
     client, _, _, _, _ = _make_client()
     resp = client.post("/admin/proposals/nope/approve", json={"reviewer": "a"})
     assert resp.status_code == 404
+
+
+# ---------------------------------------------------------------------------
+# Task 10: Audit log tests
+# ---------------------------------------------------------------------------
+
+def test_list_audit_log() -> None:
+    from datetime import datetime
+    from opencs.harness.action_plan import RiskTier
+    from opencs.harness.audit_log import AuditEntry
+
+    client, _, _, audit_log, _ = _make_client()
+    for i in range(3):
+        audit_log.append(AuditEntry(
+            action_id=f"a-{i}", tool_id="t", risk_tier=RiskTier.GREEN,
+            decision="auto_approved", actor="action_guard",
+            ts=datetime(2026, 5, 1, 12, i, 0), note=None,
+        ))
+    resp = client.get("/admin/audit-log", params={"limit": 10})
+    assert resp.status_code == 200
+    data = resp.json()
+    assert data["total"] == 3
+    assert len(data["items"]) == 3
+
+
+def test_list_audit_log_filtered_by_actor() -> None:
+    from datetime import datetime
+    from opencs.harness.action_plan import RiskTier
+    from opencs.harness.audit_log import AuditEntry
+
+    client, _, _, audit_log, _ = _make_client()
+    for actor in ["alice", "bob", "alice"]:
+        audit_log.append(AuditEntry(
+            action_id="a", tool_id="t", risk_tier=RiskTier.GREEN,
+            decision="auto_approved", actor=actor,
+            ts=datetime(2026, 5, 1, 12, 0, 0), note=None,
+        ))
+    resp = client.get("/admin/audit-log", params={"actor": "alice"})
+    assert resp.status_code == 200
+    assert resp.json()["total"] == 2
+
+
+# ---------------------------------------------------------------------------
+# Task 11: Replay endpoint tests
+# ---------------------------------------------------------------------------
+
+def test_admin_replays_post_delegates_to_engine() -> None:
+    from unittest.mock import AsyncMock, MagicMock
+    from opencs.replay.types import ReplayResult, Verdict
+
+    proposal_store = ProposalStore(db_path=":memory:")
+    audit_log = AuditLog(db_path=":memory:")
+    hitl = PersistentHITLQueue(store=proposal_store)
+    crm = CRMConfigStore(db_path=":memory:")
+    registry = ChannelRegistry()
+    registry.register(WebChatAdapter())
+    fake_engine = MagicMock()
+    fake_engine.replay = AsyncMock(return_value=ReplayResult(
+        session_id="s1", verdict=Verdict.BADCASE_FIXED,
+        divergence_points=[], replay_event_count=2, baseline_event_count=2,
+    ))
+    app = create_app(
+        registry, webchat_handler=None,
+        replay_engine=fake_engine, proposal_store=proposal_store,
+        audit_log=audit_log, hitl_queue=hitl, crm_config_store=crm,
+    )
+    client = TestClient(app)
+    resp = client.post(
+        "/admin/replays",
+        json={"source_conversation_id": "c1", "mode": "what_if"},
+    )
+    assert resp.status_code == 200
+    assert resp.json()["session_id"] == "s1"
+
+
+def test_admin_replays_503_without_engine() -> None:
+    client, _, _, _, _ = _make_client()
+    resp = client.post(
+        "/admin/replays",
+        json={"source_conversation_id": "c1", "mode": "what_if"},
+    )
+    assert resp.status_code == 503
+
+
+# ---------------------------------------------------------------------------
+# Task 12: CRM config endpoint tests
+# ---------------------------------------------------------------------------
+
+def test_crm_config_get_returns_404_when_empty() -> None:
+    client, _, _, _, _ = _make_client()
+    resp = client.get("/admin/crm/config")
+    assert resp.status_code == 404
+
+
+def test_crm_config_put_and_get_roundtrip() -> None:
+    client, _, _, _, _ = _make_client()
+    resp = client.put(
+        "/admin/crm/config",
+        json={
+            "base_url": "https://crm.example.com",
+            "schema_json": "{}",
+            "exposed_operations": ["getCustomer"],
+        },
+    )
+    assert resp.status_code == 200
+    resp2 = client.get("/admin/crm/config")
+    assert resp2.status_code == 200
+    assert resp2.json()["base_url"] == "https://crm.example.com"
+
+
+def test_crm_validate_returns_detected_operations() -> None:
+    client, _, _, _, _ = _make_client()
+    schema = '{"openapi":"3.0","paths":{"/customer":{"get":{"operationId":"getCustomer"}}}}'
+    resp = client.post(
+        "/admin/crm/validate",
+        json={"base_url": "https://crm.example.com", "schema_json": schema},
+    )
+    assert resp.status_code == 200
+    data = resp.json()
+    assert data["ok"] is True
+    assert "getCustomer" in data["detected_operations"]
+
+
+def test_crm_validate_rejects_bad_json() -> None:
+    client, _, _, _, _ = _make_client()
+    resp = client.post(
+        "/admin/crm/validate",
+        json={"base_url": "x", "schema_json": "not-json"},
+    )
+    assert resp.status_code == 200
+    data = resp.json()
+    assert data["ok"] is False
+    assert data["errors"]
+
+
+# ---------------------------------------------------------------------------
+# Task 13: Stats endpoint test
+# ---------------------------------------------------------------------------
+
+def test_stats_endpoint() -> None:
+    from datetime import datetime
+    from opencs.harness.action_plan import RiskTier
+    from opencs.harness.audit_log import AuditEntry
+
+    client, store, _, audit_log, _ = _make_client()
+    _seed_proposal(store, "p-1", ProposalStatus.HITL_PENDING)
+    _seed_proposal(store, "p-2", ProposalStatus.HITL_PENDING)
+    _seed_proposal(store, "p-3", ProposalStatus.AUTO_PROMOTED)
+    audit_log.append(AuditEntry(
+        action_id="a-1", tool_id="t", risk_tier=RiskTier.GREEN,
+        decision="auto_approved", actor="action_guard",
+        ts=datetime.utcnow(), note=None,
+    ))
+    resp = client.get("/admin/stats")
+    assert resp.status_code == 200
+    data = resp.json()
+    assert data["pending_proposals"] == 2
+    assert len(data["recent_audit"]) == 1
