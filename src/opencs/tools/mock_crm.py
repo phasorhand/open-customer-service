@@ -1,3 +1,5 @@
+"""In-memory mock CRM data and FastAPI router for development and testing."""
+
 from fastapi import APIRouter, HTTPException
 
 CUSTOMERS: dict[str, dict[str, object]] = {

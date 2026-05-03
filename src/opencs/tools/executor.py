@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from opencs.tools.protocol import ToolResult
+from opencs.tools.protocol import ToolResult  # needed for mypy return annotation
 from opencs.tools.registry import ToolRegistry
 
 if TYPE_CHECKING:
