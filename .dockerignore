@@ -1,0 +1,41 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+htmlcov/
+.coverage
+dist/
+build/
+
+# Node (web-ui)
+web-ui/node_modules/
+web-ui/.next/
+web-ui/out/
+web-ui/coverage/
+
+# VCS
+.git/
+.gitignore
+.github/
+
+# Docs + planning
+docs/
+.claude/
+.planning/
+*.md
+
+# Databases + secrets
+*.db
+*.sqlite
+.env
+.env.local
+.env.*.local
+
+# Misc
+.DS_Store
+*.log
