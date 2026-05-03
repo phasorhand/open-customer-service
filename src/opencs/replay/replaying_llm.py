@@ -43,5 +43,5 @@ class ReplayingLLMClient:
         if not self._prompt_override:
             return messages
         if messages and messages[0].role == "system":
-            return [LLMMessage(role="system", content=self._prompt_override)] + list(messages[1:])
-        return [LLMMessage(role="system", content=self._prompt_override)] + list(messages)
+            return [LLMMessage(role="system", content=self._prompt_override), *messages[1:]]
+        return [LLMMessage(role="system", content=self._prompt_override), *messages]

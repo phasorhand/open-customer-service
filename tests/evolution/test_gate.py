@@ -146,7 +146,9 @@ def test_gate_appends_audit_entry(gate: EvolutionGate) -> None:
 def test_gate_stamps_current_trace_id(monkeypatch) -> None:
     from opencs.evolution.gate import EvolutionGate
     from opencs.evolution.types import (
-        EvolutionDimension, Proposal, ProposalAction,
+        EvolutionDimension,
+        Proposal,
+        ProposalAction,
     )
     from opencs.harness.audit_log import AuditLog
 

@@ -3,4 +3,4 @@ from opencs.tools.executor import ToolExecutor
 from opencs.tools.protocol import Tool, ToolDescription, ToolResult
 from opencs.tools.registry import ToolRegistry
 
-__all__ = ["Tool", "ToolDescription", "ToolResult", "ToolRegistry", "APITool", "ToolExecutor"]
+__all__ = ["APITool", "Tool", "ToolDescription", "ToolExecutor", "ToolRegistry", "ToolResult"]

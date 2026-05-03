@@ -10,7 +10,6 @@ from opencs.evolution.types import (
     EvolutionDimension,
     Proposal,
     ProposalAction,
-    ProposalStatus,
 )
 from opencs.gateway.app import create_app
 from opencs.harness.audit_log import AuditLog

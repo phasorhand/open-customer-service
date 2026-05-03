@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json as _json
 from datetime import datetime
+from typing import Any
 
 from fastapi import APIRouter, HTTPException, Query, Request
 from pydantic import BaseModel as _BaseModel
@@ -28,14 +29,14 @@ from opencs.replay.types import ReplayMode, ReplayOverrides, ReplayScope, Replay
 router = APIRouter(prefix="/admin", tags=["admin"])
 
 
-def _require_proposal_store(request: Request):
+def _require_proposal_store(request: Request) -> Any:
     store = getattr(request.app.state, "proposal_store", None)
     if store is None:
         raise HTTPException(503, "ProposalStore not configured")
     return store
 
 
-def _require_hitl_queue(request: Request):
+def _require_hitl_queue(request: Request) -> Any:
     q = getattr(request.app.state, "hitl_queue", None)
     if q is None:
         raise HTTPException(503, "HITL queue not configured")
@@ -45,8 +46,8 @@ def _require_hitl_queue(request: Request):
 @router.get("/proposals", response_model=ProposalListResponse)
 async def list_proposals(
     request: Request,
-    status: ProposalStatus | None = Query(default=None),
-    dimension: EvolutionDimension | None = Query(default=None),
+    status: ProposalStatus | None = Query(default=None),  # noqa: B008
+    dimension: EvolutionDimension | None = Query(default=None),  # noqa: B008
     limit: int = Query(default=50, ge=1, le=500),
     offset: int = Query(default=0, ge=0),
 ) -> ProposalListResponse:
@@ -90,8 +91,8 @@ async def approve_proposal(
     queue = _require_hitl_queue(request)
     try:
         updated = queue.approve(proposal_id, reviewer=body.reviewer)
-    except KeyError:
-        raise HTTPException(404, f"No pending proposal with id={proposal_id}")
+    except KeyError as err:
+        raise HTTPException(404, f"No pending proposal with id={proposal_id}") from err
     return DecisionResponse(
         id=updated.id, status=updated.status,
         reviewer=updated.reviewer, rejection_note=updated.rejection_note,
@@ -105,8 +106,8 @@ async def reject_proposal(
     queue = _require_hitl_queue(request)
     try:
         updated = queue.reject(proposal_id, reviewer=body.reviewer, note=body.note)
-    except KeyError:
-        raise HTTPException(404, f"No pending proposal with id={proposal_id}")
+    except KeyError as err:
+        raise HTTPException(404, f"No pending proposal with id={proposal_id}") from err
     return DecisionResponse(
         id=updated.id, status=updated.status,
         reviewer=updated.reviewer, rejection_note=updated.rejection_note,
@@ -117,7 +118,7 @@ async def reject_proposal(
 # Task 10: Audit log endpoint
 # ---------------------------------------------------------------------------
 
-def _require_audit_log(request: Request):
+def _require_audit_log(request: Request) -> Any:
     log = getattr(request.app.state, "audit_log", None)
     if log is None:
         raise HTTPException(503, "AuditLog not configured")
@@ -129,8 +130,8 @@ async def list_audit_log(
     request: Request,
     actor: str | None = Query(default=None),
     decision: str | None = Query(default=None),
-    since: datetime | None = Query(default=None),
-    until: datetime | None = Query(default=None),
+    since: datetime | None = Query(default=None),  # noqa: B008
+    until: datetime | None = Query(default=None),  # noqa: B008
     limit: int = Query(default=50, ge=1, le=500),
     offset: int = Query(default=0, ge=0),
 ) -> AuditLogListResponse:
@@ -171,7 +172,7 @@ class AdminReplayResponse(_BaseModel):
     replay_event_count: int
 
 
-def _require_replay_engine(request: Request):
+def _require_replay_engine(request: Request) -> Any:
     engine = getattr(request.app.state, "replay_engine", None)
     if engine is None:
         raise HTTPException(503, "ReplayEngine not configured")
@@ -201,7 +202,7 @@ async def admin_post_replay(
 # Task 12: CRM config endpoints
 # ---------------------------------------------------------------------------
 
-def _require_crm_store(request: Request):
+def _require_crm_store(request: Request) -> Any:
     store = getattr(request.app.state, "crm_config_store", None)
     if store is None:
         raise HTTPException(503, "CRMConfigStore not configured")

@@ -68,6 +68,7 @@ def test_in_memory_db() -> None:
 
 def test_audit_log_list_filters_by_actor() -> None:
     from datetime import datetime, timedelta
+
     from opencs.harness.action_plan import RiskTier
     from opencs.harness.audit_log import AuditEntry, AuditLog
 
@@ -88,6 +89,7 @@ def test_audit_log_list_filters_by_actor() -> None:
 
 def test_audit_log_list_pagination() -> None:
     from datetime import datetime, timedelta
+
     from opencs.harness.action_plan import RiskTier
     from opencs.harness.audit_log import AuditEntry, AuditLog
 

@@ -103,7 +103,9 @@ def test_list_by_status(store: ProposalStore) -> None:
 def test_proposal_store_persists_trace_id() -> None:
     from opencs.evolution.proposal_store import ProposalStore
     from opencs.evolution.types import (
-        EvolutionDimension, Proposal, ProposalAction, ProposalStatus,
+        EvolutionDimension,
+        Proposal,
+        ProposalAction,
     )
     store = ProposalStore(db_path=":memory:")
     p = Proposal(
@@ -124,7 +126,9 @@ def test_proposal_store_persists_trace_id() -> None:
 def test_proposal_store_trace_id_default_none() -> None:
     from opencs.evolution.proposal_store import ProposalStore
     from opencs.evolution.types import (
-        EvolutionDimension, Proposal, ProposalAction,
+        EvolutionDimension,
+        Proposal,
+        ProposalAction,
     )
     store = ProposalStore(db_path=":memory:")
     p = Proposal(
@@ -144,7 +148,10 @@ def test_proposal_store_trace_id_default_none() -> None:
 def test_proposal_store_list_with_filters() -> None:
     from opencs.evolution.proposal_store import ProposalStore
     from opencs.evolution.types import (
-        EvolutionDimension, Proposal, ProposalAction, ProposalStatus,
+        EvolutionDimension,
+        Proposal,
+        ProposalAction,
+        ProposalStatus,
     )
     store = ProposalStore(db_path=":memory:")
     for i, (dim, status) in enumerate([
@@ -158,7 +165,9 @@ def test_proposal_store_list_with_filters() -> None:
         ))
     pending_all = store.list(status=ProposalStatus.HITL_PENDING)
     assert len(pending_all) == 2
-    pending_skill = store.list(status=ProposalStatus.HITL_PENDING, dimension=EvolutionDimension.SKILL)
+    pending_skill = store.list(
+        status=ProposalStatus.HITL_PENDING, dimension=EvolutionDimension.SKILL,
+    )
     assert len(pending_skill) == 1
     page = store.list(limit=2, offset=0)
     assert len(page) == 2
@@ -167,7 +176,10 @@ def test_proposal_store_list_with_filters() -> None:
 def test_proposal_store_count_by_status() -> None:
     from opencs.evolution.proposal_store import ProposalStore
     from opencs.evolution.types import (
-        EvolutionDimension, Proposal, ProposalAction, ProposalStatus,
+        EvolutionDimension,
+        Proposal,
+        ProposalAction,
+        ProposalStatus,
     )
     store = ProposalStore(db_path=":memory:")
     for i in range(3):

@@ -1,8 +1,10 @@
 from __future__ import annotations
 
+from collections.abc import Callable as _Callable
 from datetime import UTC, datetime
 from functools import wraps
-from typing import TYPE_CHECKING, Any as _Any, Callable as _Callable
+from typing import TYPE_CHECKING
+from typing import Any as _Any
 
 from opencs.agents.base_worker import BaseWorker, WorkerInput
 from opencs.channel.exec_token import ExecutionToken
@@ -20,20 +22,22 @@ if TYPE_CHECKING:
 
 def _observe(name: str) -> _Callable[..., _Any]:
     """Decorator: wraps coroutine with Langfuse @observe if available; else no-op."""
+    dec: _Callable[..., _Any]
     try:
         from langfuse.decorators import observe as lf_observe
-        decorator = lf_observe(name=name)
+        dec = lf_observe(name=name)
     except Exception:
-        def decorator(fn):  # type: ignore[assignment]
+        def _noop(fn: _Callable[..., _Any]) -> _Callable[..., _Any]:
             @wraps(fn)
             async def wrapped(*a: _Any, **kw: _Any) -> _Any:
                 return await fn(*a, **kw)
             return wrapped
+        dec = _noop
 
     def outer(fn: _Callable[..., _Any]) -> _Callable[..., _Any]:
-        wrapped = decorator(fn)
-        wrapped.__langfuse_observed__ = True  # type: ignore[attr-defined]
-        return wrapped
+        wrapped: _Any = dec(fn)
+        wrapped.__langfuse_observed__ = True
+        return wrapped  # type: ignore[no-any-return]
 
     return outer
 

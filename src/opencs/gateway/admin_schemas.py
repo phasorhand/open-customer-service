@@ -88,19 +88,19 @@ class StatsResponse(BaseModel):
 
 class CRMConfigRequest(BaseModel):
     base_url: str = Field(min_length=1)
-    schema_json: str
+    schema_json: str  # type: ignore[assignment]
     exposed_operations: list[str] = Field(default_factory=list)
 
 
 class CRMConfigResponse(BaseModel):
     base_url: str
-    schema_json: str
+    schema_json: str  # type: ignore[assignment]
     exposed_operations: list[str]
 
 
 class CRMValidateRequest(BaseModel):
     base_url: str = Field(min_length=1)
-    schema_json: str
+    schema_json: str  # type: ignore[assignment]
 
 
 class CRMValidateResponse(BaseModel):

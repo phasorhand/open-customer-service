@@ -7,7 +7,7 @@ from typing import Any
 try:
     from langfuse import Langfuse
 except ImportError:  # pragma: no cover
-    Langfuse = None  # type: ignore[assignment,misc]
+    Langfuse = None
 
 
 @dataclass
@@ -24,7 +24,8 @@ class LangfuseClient:
         if self.sdk is None:
             return None
         try:
-            return self.sdk.get_current_trace_id()
+            result: str | None = self.sdk.get_current_trace_id()
+            return result
         except Exception:
             return None
 

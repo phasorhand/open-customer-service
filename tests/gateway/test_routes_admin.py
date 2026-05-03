@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import pytest
 from fastapi.testclient import TestClient
 
 from opencs.channel.registry import ChannelRegistry
@@ -9,13 +8,18 @@ from opencs.evolution.crm_config_store import CRMConfigStore
 from opencs.evolution.persistent_queue import PersistentHITLQueue
 from opencs.evolution.proposal_store import ProposalStore
 from opencs.evolution.types import (
-    EvolutionDimension, Proposal, ProposalAction, ProposalStatus,
+    EvolutionDimension,
+    Proposal,
+    ProposalAction,
+    ProposalStatus,
 )
 from opencs.gateway.app import create_app
 from opencs.harness.audit_log import AuditLog
 
 
-def _make_client() -> tuple[TestClient, ProposalStore, PersistentHITLQueue, AuditLog, CRMConfigStore]:
+def _make_client() -> tuple[
+    TestClient, ProposalStore, PersistentHITLQueue, AuditLog, CRMConfigStore,
+]:
     proposal_store = ProposalStore(db_path=":memory:")
     audit_log = AuditLog(db_path=":memory:")
     hitl = PersistentHITLQueue(store=proposal_store)
@@ -139,6 +143,7 @@ def test_approve_unknown_proposal_returns_404() -> None:
 
 def test_list_audit_log() -> None:
     from datetime import datetime
+
     from opencs.harness.action_plan import RiskTier
     from opencs.harness.audit_log import AuditEntry
 
@@ -158,6 +163,7 @@ def test_list_audit_log() -> None:
 
 def test_list_audit_log_filtered_by_actor() -> None:
     from datetime import datetime
+
     from opencs.harness.action_plan import RiskTier
     from opencs.harness.audit_log import AuditEntry
 
@@ -179,6 +185,7 @@ def test_list_audit_log_filtered_by_actor() -> None:
 
 def test_admin_replays_post_delegates_to_engine() -> None:
     from unittest.mock import AsyncMock, MagicMock
+
     from opencs.replay.types import ReplayResult, Verdict
 
     proposal_store = ProposalStore(db_path=":memory:")
@@ -272,6 +279,7 @@ def test_crm_validate_rejects_bad_json() -> None:
 
 def test_stats_endpoint() -> None:
     from datetime import datetime
+
     from opencs.harness.action_plan import RiskTier
     from opencs.harness.audit_log import AuditEntry
 

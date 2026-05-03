@@ -1,11 +1,9 @@
 from __future__ import annotations
 
-import os
 from unittest.mock import MagicMock, patch
 
 from opencs.tracing.langfuse_client import (
     LangfuseClient,
-    get_current_trace_id,
     init_langfuse,
 )
 

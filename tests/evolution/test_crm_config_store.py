@@ -24,8 +24,12 @@ def test_get_returns_none_when_empty() -> None:
 
 def test_save_overwrites_previous() -> None:
     store = CRMConfigStore(db_path=":memory:")
-    store.save(CRMConfig(base_url="https://v1.example.com", schema_json="{}", exposed_operations=[]))
-    store.save(CRMConfig(base_url="https://v2.example.com", schema_json="{}", exposed_operations=["a"]))
+    store.save(CRMConfig(
+        base_url="https://v1.example.com", schema_json="{}", exposed_operations=[],
+    ))
+    store.save(CRMConfig(
+        base_url="https://v2.example.com", schema_json="{}", exposed_operations=["a"],
+    ))
     loaded = store.get()
     assert loaded is not None
     assert loaded.base_url == "https://v2.example.com"

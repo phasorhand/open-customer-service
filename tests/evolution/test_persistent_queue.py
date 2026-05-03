@@ -79,7 +79,8 @@ def test_approve_unknown_proposal_raises() -> None:
 
 
 def test_queue_survives_reinstantiation() -> None:
-    import tempfile, os
+    import os
+    import tempfile
     with tempfile.NamedTemporaryFile(suffix=".db", delete=False) as f:
         path = f.name
     try:
