@@ -18,3 +18,6 @@ class ToolRegistry:
 
     def list_tools(self) -> list[ToolDescription]:
         return [tool.describe() for tool in self._tools.values()]
+
+    def deregister(self, tool_id: str) -> None:
+        self._tools.pop(tool_id, None)
