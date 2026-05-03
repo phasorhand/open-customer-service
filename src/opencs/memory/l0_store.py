@@ -2,8 +2,11 @@ from __future__ import annotations
 
 import json
 import sqlite3
+from collections.abc import Sequence
 from dataclasses import dataclass
 from datetime import datetime
+
+_L = list  # module-level alias; avoids class-scope shadowing by the .list() method
 
 
 @dataclass
@@ -64,8 +67,8 @@ class L0RawEventStore:
         return rows
 
     def list_by_kinds(
-        self, *, conversation_id: str, kinds: list[str], limit: int = 1000
-    ) -> list[L0Event]:
+        self, *, conversation_id: str, kinds: Sequence[str], limit: int = 1000
+    ) -> _L[L0Event]:
         placeholders = ",".join("?" for _ in kinds)
         cur = self._conn.execute(
             f"SELECT conversation_id, kind, payload_json, ts "

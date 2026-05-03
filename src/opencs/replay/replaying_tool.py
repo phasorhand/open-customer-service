@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, cast
 
 from opencs.replay.types import ReplayMode
 from opencs.tools.protocol import ToolResult
@@ -41,8 +41,8 @@ class ReplayingToolExecutor:
             return ToolResult(
                 tool_id=plan.tool_id,
                 success=bool(cached.get("success")),
-                data=dict(cached.get("data") or {}),
-                error=cached.get("error") if cached.get("error") else None,
+                data=cast(dict[str, object], cached.get("data") or {}),
+                error=cast(str | None, cached.get("error") or None),
             )
 
         return await self._real.execute(plan, token)

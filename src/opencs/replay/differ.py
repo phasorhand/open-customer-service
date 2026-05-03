@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import json
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 
 from opencs.memory.l0_store import L0Event
 from opencs.replay.types import DivergenceKind, DivergencePoint, Verdict
@@ -35,17 +35,20 @@ class ReplayDiffer:
             b = baseline[i] if i < len(baseline) else None
             r = replay[i] if i < len(replay) else None
 
+            _tool_kinds = ("tool_call", "tool_result")
             if b is None and r is not None:
                 divergences.append(DivergencePoint(
                     step_index=i,
-                    kind=DivergenceKind.TOOL_ADDED if r.kind in ("tool_call", "tool_result") else DivergenceKind.CONTENT_CHANGED,
+                    kind=DivergenceKind.TOOL_ADDED if r.kind in _tool_kinds
+                    else DivergenceKind.CONTENT_CHANGED,
                     baseline_summary="<missing>",
                     replay_summary=f"{r.kind}: {_summarize(r.payload)}",
                 ))
             elif r is None and b is not None:
                 divergences.append(DivergencePoint(
                     step_index=i,
-                    kind=DivergenceKind.TOOL_MISSING if b.kind in ("tool_call", "tool_result") else DivergenceKind.CONTENT_CHANGED,
+                    kind=DivergenceKind.TOOL_MISSING if b.kind in _tool_kinds
+                    else DivergenceKind.CONTENT_CHANGED,
                     baseline_summary=f"{b.kind}: {_summarize(b.payload)}",
                     replay_summary="<missing>",
                 ))

@@ -18,7 +18,8 @@ def test_identical_traces_produce_no_divergences() -> None:
     baseline = [
         _event("inbound_message", {"text": "hello"}, 0),
         _event("tool_call", {"tool_id": "crm.get_order", "args": {"order_id": "ord-001"}}, 1),
-        _event("tool_result", {"tool_id": "crm.get_order", "success": True, "data": {"status": "shipped"}}, 2),
+        _event("tool_result", {"tool_id": "crm.get_order", "success": True,
+                               "data": {"status": "shipped"}}, 2),
     ]
     replay = list(baseline)
     differ = ReplayDiffer()
@@ -30,11 +31,13 @@ def test_identical_traces_produce_no_divergences() -> None:
 def test_content_changed_detected() -> None:
     baseline = [
         _event("inbound_message", {"text": "hello"}, 0),
-        _event("tool_result", {"tool_id": "crm.get_order", "success": True, "data": {"status": "shipped"}}, 1),
+        _event("tool_result", {"tool_id": "crm.get_order", "success": True,
+                               "data": {"status": "shipped"}}, 1),
     ]
     replay = [
         _event("inbound_message", {"text": "hello"}, 0),
-        _event("tool_result", {"tool_id": "crm.get_order", "success": True, "data": {"status": "delivered"}}, 1),
+        _event("tool_result", {"tool_id": "crm.get_order", "success": True,
+                               "data": {"status": "delivered"}}, 1),
     ]
     differ = ReplayDiffer()
     result = differ.diff(baseline=baseline, replay=replay)
@@ -71,10 +74,12 @@ def test_tool_missing_detected() -> None:
 
 def test_badcase_remains_when_same_error() -> None:
     baseline = [
-        _event("tool_result", {"tool_id": "t", "success": False, "data": {}, "error": "HTTP 500"}, 0),
+        _event("tool_result", {"tool_id": "t", "success": False, "data": {},
+                               "error": "HTTP 500"}, 0),
     ]
     replay = [
-        _event("tool_result", {"tool_id": "t", "success": False, "data": {}, "error": "HTTP 500"}, 0),
+        _event("tool_result", {"tool_id": "t", "success": False, "data": {},
+                               "error": "HTTP 500"}, 0),
     ]
     differ = ReplayDiffer(badcase_event_index=0)
     result = differ.diff(baseline=baseline, replay=replay)

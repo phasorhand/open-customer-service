@@ -1,4 +1,3 @@
-import pytest
 
 from opencs.agents.llm_client import FakeLLMClient, LLMMessage
 from opencs.replay.replaying_llm import ReplayingLLMClient
@@ -91,7 +90,10 @@ async def test_prompt_override_prepended() -> None:
         fallback=fallback,
         prompt_override="You are now very strict.",
     )
-    msgs = [LLMMessage(role="system", content="Original prompt"), LLMMessage(role="user", content="hi")]
+    msgs = [
+        LLMMessage(role="system", content="Original prompt"),
+        LLMMessage(role="user", content="hi"),
+    ]
     await client.chat(messages=msgs, model="fake")
     sent_msgs = fallback.calls[0]["messages"]
     assert sent_msgs[0].content == "You are now very strict."

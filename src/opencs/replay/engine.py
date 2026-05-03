@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import uuid
-from datetime import UTC, datetime
 from typing import TYPE_CHECKING
 
 from opencs.agents.cs_reply import CSReplyWorker
@@ -19,7 +18,7 @@ from opencs.replay.read_only_channel import ReadOnlyChannelAdapter
 from opencs.replay.replaying_llm import ReplayingLLMClient
 from opencs.replay.replaying_tool import ReplayingToolExecutor
 from opencs.replay.trace_loader import TraceLoader
-from opencs.replay.types import ReplayMode, ReplayResult, ReplaySession, Verdict
+from opencs.replay.types import ReplayResult, ReplaySession, Verdict
 from opencs.tools.executor import ToolExecutor
 from opencs.tools.registry import ToolRegistry
 
@@ -75,7 +74,7 @@ class ReplayEngine:
         replay_memory = MemoryStore()
         ro_adapter = ReadOnlyChannelAdapter()
         channel_registry = ChannelRegistry()
-        channel_registry.register(ro_adapter)
+        channel_registry.register(ro_adapter)  # type: ignore[arg-type]
 
         guard = ActionGuard(
             token_factory=TokenFactory(secret_key=_REPLAY_SECRET),
@@ -89,7 +88,7 @@ class ReplayEngine:
             guard=guard,
             registry=channel_registry,
             memory_store=replay_memory,
-            tool_executor=replaying_tool,
+            tool_executor=replaying_tool,  # type: ignore[arg-type]
         )
 
         for inbound_event in trace.inbound_messages:

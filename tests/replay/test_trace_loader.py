@@ -3,7 +3,7 @@ from datetime import UTC, datetime
 import pytest
 
 from opencs.memory.l0_store import L0Event, L0RawEventStore
-from opencs.replay.trace_loader import Trace, TraceLoader
+from opencs.replay.trace_loader import TraceLoader
 
 
 @pytest.fixture
@@ -24,13 +24,15 @@ def l0() -> L0RawEventStore:
     store.append(L0Event(
         conversation_id="conv-1",
         kind="tool_result",
-        payload={"action_id": "act-1", "tool_id": "crm.get_order", "success": True, "data": {"status": "shipped"}, "error": None},
+        payload={"action_id": "act-1", "tool_id": "crm.get_order", "success": True,
+                 "data": {"status": "shipped"}, "error": None},
         ts=datetime(2026, 5, 1, 10, 0, 2, tzinfo=UTC),
     ))
     store.append(L0Event(
         conversation_id="conv-1",
         kind="llm_call",
-        payload={"recording_id": "rec-1", "model": "fake", "input": "where is ord-001?", "output": "Your order has shipped."},
+        payload={"recording_id": "rec-1", "model": "fake", "input": "where is ord-001?",
+                 "output": "Your order has shipped."},
         ts=datetime(2026, 5, 1, 10, 0, 3, tzinfo=UTC),
     ))
     return store

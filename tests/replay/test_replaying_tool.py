@@ -1,7 +1,5 @@
 from datetime import UTC, datetime
 
-import pytest
-
 from opencs.channel.exec_token import StubExecutionToken
 from opencs.harness.action_plan import ActionPlan, RiskTier
 from opencs.replay.replaying_tool import ReplayingToolExecutor
@@ -32,7 +30,10 @@ class _FakeTool:
         self.call_count = 0
 
     def describe(self) -> ToolDescription:
-        return ToolDescription(tool_id=self.tool_id, name=self.tool_id, description="", parameters={}, read_only=True)
+        return ToolDescription(
+            tool_id=self.tool_id, name=self.tool_id, description="",
+            parameters={}, read_only=True,
+        )
 
     async def call(self, args, token) -> ToolResult:
         self.call_count += 1

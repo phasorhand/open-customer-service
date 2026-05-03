@@ -1,13 +1,19 @@
-import uuid
 from datetime import UTC, datetime
 
 import pytest
 
-from opencs.agents.llm_client import FakeLLMClient, LLMMessage
+from opencs.agents.llm_client import FakeLLMClient
 from opencs.memory.l0_store import L0Event, L0RawEventStore
 from opencs.memory.memory_store import MemoryStore
 from opencs.replay.engine import ReplayEngine
-from opencs.replay.types import ReplayMode, ReplayOverrides, ReplayResult, ReplayScope, ReplaySession, Verdict
+from opencs.replay.types import (
+    ReplayMode,
+    ReplayOverrides,
+    ReplayResult,
+    ReplayScope,
+    ReplaySession,
+    Verdict,
+)
 from opencs.tools.protocol import ToolDescription, ToolResult
 from opencs.tools.registry import ToolRegistry
 
@@ -17,7 +23,10 @@ class _FakeTool:
         self.tool_id = tool_id
 
     def describe(self) -> ToolDescription:
-        return ToolDescription(tool_id=self.tool_id, name=self.tool_id, description="", parameters={}, read_only=True)
+        return ToolDescription(
+            tool_id=self.tool_id, name=self.tool_id, description="",
+            parameters={}, read_only=True,
+        )
 
     async def call(self, args, token) -> ToolResult:
         return ToolResult(tool_id=self.tool_id, success=True, data={"status": "live_call"})
@@ -64,7 +73,9 @@ def tool_registry() -> ToolRegistry:
     return reg
 
 
-async def test_strict_replay_produces_result(seeded_memory: MemoryStore, tool_registry: ToolRegistry) -> None:
+async def test_strict_replay_produces_result(
+    seeded_memory: MemoryStore, tool_registry: ToolRegistry
+) -> None:
     engine = ReplayEngine(
         l0=seeded_memory.l0,
         tool_registry=tool_registry,
@@ -81,7 +92,9 @@ async def test_strict_replay_produces_result(seeded_memory: MemoryStore, tool_re
     assert result.baseline_event_count == 2
 
 
-async def test_strict_replay_uses_cached_llm(seeded_memory: MemoryStore, tool_registry: ToolRegistry) -> None:
+async def test_strict_replay_uses_cached_llm(
+    seeded_memory: MemoryStore, tool_registry: ToolRegistry
+) -> None:
     fallback = FakeLLMClient(responses=["SHOULD NOT BE CALLED"])
     engine = ReplayEngine(
         l0=seeded_memory.l0,
@@ -93,11 +106,13 @@ async def test_strict_replay_uses_cached_llm(seeded_memory: MemoryStore, tool_re
         mode=ReplayMode.STRICT,
         scope=ReplayScope.CONVERSATION,
     )
-    result = await engine.replay(session)
+    await engine.replay(session)
     assert len(fallback.calls) == 0
 
 
-async def test_what_if_with_prompt_override(seeded_memory: MemoryStore, tool_registry: ToolRegistry) -> None:
+async def test_what_if_with_prompt_override(
+    seeded_memory: MemoryStore, tool_registry: ToolRegistry
+) -> None:
     fallback = FakeLLMClient(responses=["I am strict now."])
     engine = ReplayEngine(
         l0=seeded_memory.l0,
@@ -111,11 +126,16 @@ async def test_what_if_with_prompt_override(seeded_memory: MemoryStore, tool_reg
         overrides=ReplayOverrides(prompt_override="Be very strict."),
     )
     result = await engine.replay(session)
-    assert result.verdict in (Verdict.BADCASE_FIXED, Verdict.INCONCLUSIVE, Verdict.BADCASE_REMAINS, Verdict.NEW_REGRESSION)
+    assert result.verdict in (
+        Verdict.BADCASE_FIXED, Verdict.INCONCLUSIVE,
+        Verdict.BADCASE_REMAINS, Verdict.NEW_REGRESSION,
+    )
     assert len(fallback.calls) >= 1
 
 
-async def test_empty_conversation_returns_inconclusive(memory: MemoryStore, tool_registry: ToolRegistry) -> None:
+async def test_empty_conversation_returns_inconclusive(
+    memory: MemoryStore, tool_registry: ToolRegistry
+) -> None:
     engine = ReplayEngine(
         l0=memory.l0,
         tool_registry=tool_registry,
