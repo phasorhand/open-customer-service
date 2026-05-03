@@ -1,7 +1,8 @@
-import pytest
 from unittest.mock import AsyncMock, MagicMock
 
-from opencs.evolution.shadow_runner import ShadowResult, ShadowRunner
+import pytest
+
+from opencs.evolution.shadow_runner import ShadowRunner
 from opencs.evolution.types import EvolutionDimension, Proposal, ProposalAction
 from opencs.replay.types import ReplayResult, Verdict
 

@@ -125,7 +125,9 @@ class ProposalStore:
             confidence=confidence,
             risk_level=risk_level,
             status=ProposalStatus(status),
-            replay_result=json.loads(replay_result_json) if replay_result_json is not None else None,
+            replay_result=(
+                json.loads(replay_result_json) if replay_result_json is not None else None
+            ),
             gate_decision=GateDecision(gate_decision) if gate_decision is not None else None,
             reviewer=reviewer,
             rejection_note=rejection_note,

@@ -1,3 +1,6 @@
+import pytest
+from pydantic import ValidationError
+
 from opencs.evolution.types import (
     EvolutionDimension,
     GateDecision,
@@ -52,8 +55,6 @@ def test_proposal_defaults() -> None:
 
 
 def test_proposal_is_frozen() -> None:
-    import pytest
-
     p = Proposal(
         id="prop-2",
         dimension=EvolutionDimension.MEMORY,
@@ -62,7 +63,7 @@ def test_proposal_is_frozen() -> None:
         confidence=0.8,
         risk_level="low",
     )
-    with pytest.raises(Exception):
+    with pytest.raises(ValidationError):
         p.id = "mutated"  # type: ignore[misc]
 
 

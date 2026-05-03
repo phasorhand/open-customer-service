@@ -1,11 +1,16 @@
-import pytest
 from pathlib import Path
+
+import pytest
 
 from opencs.evolution.handlers.skill import SkillApplyError, SkillProposalHandler
 from opencs.evolution.types import EvolutionDimension, Proposal, ProposalAction
 
 
-def _skill_proposal(action: ProposalAction, skill_id: str = "greet", content: str = "# Greet\nSay hello.") -> Proposal:
+def _skill_proposal(
+    action: ProposalAction,
+    skill_id: str = "greet",
+    content: str = "# Greet\nSay hello.",
+) -> Proposal:
     payload: dict = {"skill_id": skill_id, "content": content}
     return Proposal(
         id="prop-skill-1",

@@ -123,7 +123,7 @@ async def test_orchestrator_without_tool_executor_ignores_non_channel_plans() ->
 async def test_orchestrator_records_llm_call_event(
     orch_with_tool: tuple[Orchestrator, MemoryStore],
 ) -> None:
-    """Validates L0 event stream integrity for replay: inbound and tool_call events must be recorded."""
+    """Validates L0 event stream integrity for replay."""
     # This test validates the contract — actual implementation may vary
     # For now, the CSReplyWorker doesn't expose call records; this is a placeholder
     # that validates L0 event stream integrity for replay

@@ -1,6 +1,6 @@
 import pytest
 
-from opencs.evolution.hitl_queue import EvolutionHITLItem, EvolutionHITLQueue
+from opencs.evolution.hitl_queue import EvolutionHITLQueue
 from opencs.evolution.types import EvolutionDimension, Proposal, ProposalAction
 
 

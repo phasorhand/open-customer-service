@@ -1,9 +1,9 @@
 import pytest
 
 from opencs.evolution.handlers.memory import (
+    PII_KEYWORDS,
     MemoryApplyError,
     MemoryProposalHandler,
-    PII_KEYWORDS,
     _is_pii_payload,
 )
 from opencs.evolution.types import EvolutionDimension, Proposal, ProposalAction
@@ -47,7 +47,9 @@ def test_apply_writes_to_l2(handler: MemoryProposalHandler, memory_store: Memory
     assert entries[0].kind == "note"
 
 
-def test_apply_defaults_kind_to_note(handler: MemoryProposalHandler, memory_store: MemoryStore) -> None:
+def test_apply_defaults_kind_to_note(
+    handler: MemoryProposalHandler, memory_store: MemoryStore
+) -> None:
     p = Proposal(
         id="prop-mem-2",
         dimension=EvolutionDimension.MEMORY,

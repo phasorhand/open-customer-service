@@ -1,5 +1,4 @@
 import uuid
-from datetime import UTC, datetime
 
 import pytest
 
@@ -21,7 +20,11 @@ def _skill_proposal(
         id=uuid.uuid4().hex,
         dimension=EvolutionDimension.SKILL,
         action=ProposalAction.UPDATE,
-        payload={"skill_id": "greet", "content": "# Greet", "involves_orange_red_action": involves_orange_red},
+        payload={
+            "skill_id": "greet",
+            "content": "# Greet",
+            "involves_orange_red_action": involves_orange_red,
+        },
         confidence=0.9,
         risk_level=risk_level,
     )

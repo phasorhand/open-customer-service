@@ -9,7 +9,7 @@ PII_KEYWORDS: frozenset[str] = frozenset({
 })
 
 
-def _is_pii_payload(payload: dict) -> bool:
+def _is_pii_payload(payload: dict[str, object]) -> bool:
     key = str(payload.get("key", "")).lower()
     return any(pii in key for pii in PII_KEYWORDS)
 
